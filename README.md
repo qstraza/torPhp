@@ -1,5 +1,27 @@
-# Preparing Firefox Profile
+# Running the application
+As an exmaple you can use the following docker-compose.yml file which will
+help you get started.
 
+```version: '2'
+services:
+  php:
+    image: torphp
+    volumes:
+      - ./firefox-profiles:/root/.mozilla/firefox
+      - ./google-jsons:/google-jsons:ro
+
+  selenium:
+    image: selenium/standalone-firefox-debug:3.4.0-chromium
+    ports:
+      - "5900:5900"
+```
+
+# Remote Desktop (VNC)
+Used selenium image has VNC server on it. This means you can connect to it
+using a VNC client (such as tigervnc) and view its progress. Connect to
+127.0.0.1:5900. Password is 'secret'.
+
+# Preparing Firefox Profile
 Run profile manager
 (mac)
 /Applications/Firefox.app/Contents/MacOS/firefox-bin -P
