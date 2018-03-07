@@ -1,0 +1,7 @@
+/docroot/vendor
+/docroot/composer.lock
+/docroot/.idea
+/firefox-profiles/*
+/google-jsons/*
+/docroot/config.php
+docker-compose.yml

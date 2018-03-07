@@ -1,0 +1,25 @@
+{
+  "name": "qstraza/torPhp",
+  "description": "Application to help you fill the TOR application, used by firearms dealers in Slovenia.",
+  "license": "MIT",
+  "keywords": ["Tor"],
+  "authors": [
+    {
+      "name": "Rok Avbar",
+      "email": "rok@rojal.si"
+    }
+  ],
+  "require": {
+    "facebook/webdriver": "^1.4",
+    "asimlqt/php-google-spreadsheet-client": "3.0.*",
+    "google/apiclient": "^2.0"
+  },
+  "require-dev": {
+
+  },
+  "autoload": {
+    "psr-4": {
+      "qstraza\\torPhp\\": "src"
+    }
+  }
+}
