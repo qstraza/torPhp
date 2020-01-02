@@ -10,6 +10,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 use qstraza\torPhp\Data\Orozje;
 use qstraza\torPhp\Realizacija\TorRealizacijaOrozja;
 use qstraza\torPhp\TorIzdelanoOrozje;
+use qstraza\torPhp\TorIskanje;
 
 if (count($argv) >= 2) {
   $spreadsheetId = null;
@@ -58,6 +59,38 @@ if (count($argv) >= 2) {
             $orozje->logs($item->getSerijska(), "Izdelano", $e->getMessage(), true);
           }
         }
+        break;
+      case 'trenutnoStrelivo':
+        $tor = new TorIskanje($argv[1]);
+        $tor->setStrelivoDelStreliva('Strelivo izraženo v kosih');
+        $tor->setVrstaEvidence('Nabavljeno in prodano strelivo');
+        $tor->confirmPage();
+        sleep(1);
+        $tor->lastPage();
+        do {
+          sleep(2);
+          $pageNum = $tor->getCurrentPageNumber();
+          for ($i = 0; $i < $tor->getSteviloZadetkov(); $i++) {
+            sleep(2);
+            $tor->odpriZadetek($i);
+            sleep(2);
+            $ammoInfo = $tor->getAmmoInfo();
+
+            echo $ammoInfo->znamka . ";";
+            echo $ammoInfo->proizvajalec . ";";
+            echo $ammoInfo->vrsta . ";";
+            echo $ammoInfo->kaliber . ";";
+            echo $ammoInfo->qtyBought . ";";
+            echo $ammoInfo->stockLeft . ";";
+            echo $pageNum . ";";
+            echo ($i+1);
+            echo "\n";
+            $tor->goBack();
+          }
+          sleep(2);
+        } while ($tor->prevPage());
+
+        break;
     }
   }
   catch (\Exception $e) {

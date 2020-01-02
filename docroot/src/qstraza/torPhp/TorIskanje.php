@@ -8,6 +8,8 @@
 
 namespace qstraza\torPhp;
 
+use Facebook\WebDriver\WebDriverBy;
+
 class TorIskanje extends TorProxy {
   private $isciPoNeaktivnih;
   private $strelivoDelStreliva;
@@ -215,6 +217,95 @@ class TorIskanje extends TorProxy {
     $this->clickById('FM:RealizationHeader');
   }
 
+  public function odpriZadetek($n) {
+    $this->changeToWorkingFrame();
+    // Selects and deselects all first to make sure nothing is selected.
+    $this->getSeleniumDriver()->findElement(WebDriverBy::cssSelector("[name='FM:to11DataTable:_id25']"))->click()->click();
+    // Open up N-th hit in new tab if requested. $n = 0 - 9.
+    $this->clickById('FM:to11DataTable:'. $n .':selected');
+    $this->clickById('FM:DetailsHeader');
+    return $this;
+  }
+
+  public function getSteviloZadetkov() {
+    return count($this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector('#FM\:to11DataTable tbody tr ')));
+  }
+
+  public function nextPage() {
+    $element = $this->getElementById('FM:NextLink');
+    if ($element->isEnabled())
+      return $element->click();
+    else
+      return false;
+  }
+
+  public function prevPage() {
+    $element = $this->getElementById('FM:PreviousLink');
+    if ($element->isEnabled())
+      return $element->click();
+    else
+      return false;
+  }
+
+  public function lastPage() {
+    $this->changeToWorkingFrame();
+    $element = $this->getElementById('FM:LastLink');
+    if ($element->isEnabled())
+      return $element->click();
+    else
+      return false;
+  }
+
+  public function firstPage() {
+    $element = $this->getElementById('FM:FirstLink');
+    if ($element->isEnabled())
+      return $element->click();
+    else
+      return false;
+  }
+
+  public function getCurrentPageNumber() {
+    // Example:
+    // Prikazujem 431 od 440 od skupno 440 / Stran 44 od 44 / Izbranih: 0
+    $elementText = $this->getElementByCssSelector('td.col-right-to11')->getText();
+    preg_match('/Stran (\d+)/', $elementText, $output_array);
+    if (is_array($output_array) && count($output_array) == 2) {
+      return $output_array[1];
+    }
+    else
+      return 0;
+  }
+
+  public function getAmmoInfo() {
+    $this->waitUntilElement('FM:to23Read:vno_kolicina');
+    $qtyBought = (int) $this->getElementById('FM:to23Read:vno_kolicina')->getText();
+    $znamka = $this->getElementById('FM:to23Read:vno_znamka')->getText();
+    $proizvajalec = $this->getElementById('FM:to23Read:vno_proizvajalec')->getText();
+    $vrsta = $this->getElementById('FM:to23Read:vno_tov_stevilka')->getText();
+    $kaliber = $this->getElementById('FM:to23Read:vno_kaliber')->getText();
+
+    $stockLeft = $qtyBought;
+
+    $tableElements = $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector('#FM\:to12DataTable tbody tr td:nth-of-type(4)'));
+    if ($tableElements) {
+      foreach ($tableElements as $tableElement) {
+        $kol = (int) $tableElement->getText();
+        if ($kol < $stockLeft) {
+          $stockLeft = $kol;
+        }
+      }
+    }
+
+    $info = new \stdClass();
+    $info->znamka = $znamka;
+    $info->proizvajalec = $proizvajalec;
+    $info->vrsta = $vrsta;
+    $info->kaliber = $kaliber;
+    $info->qtyBought = $qtyBought;
+    $info->stockLeft = $stockLeft;
+    return $info;
+  }
+
   /**
    * @param mixed $datumRealizacijeDo
    */
@@ -225,7 +316,11 @@ class TorIskanje extends TorProxy {
   }
 
   public function confirmPage() {
-    parent::confirmPage();
+    $this->changeToWorkingFrame();
+    $this->clickById('FM:IsciFooter');
+    sleep(2);
+    $this->changeToWorkingFrame();
+    return $this->getErrorStatus();
   }
 
 }

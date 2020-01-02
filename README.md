@@ -22,6 +22,9 @@ using a VNC client (such as tigervnc) and view its progress. Connect to
 127.0.0.1:5900. Password is 'secret'.
 
 # Preparing Firefox Profile
+Note that docker selenium image uses Firefox version 53. It is not possible
+to create a profile with Firefox version >70. Download Firefox 53 or 54.
+
 Run profile manager
 (mac)
 /Applications/Firefox.app/Contents/MacOS/firefox-bin -P
@@ -30,9 +33,9 @@ create new profile (name is not important) and save it.
 
 Open up FF (make sure newly created profile is loaded) and
 add user certificate for accessing TOR
-under privacy & settings, "Certificates - When a server requests your personal certificateselect" select "Select one automatically"
+under privacy & settings, "Certificates - When a server requests your personal certificate" select "Select one automatically"
 
-Go to http://etor.mnz.gov.si/ and confirm/add the exception.
+Go to https://etor.mnz.gov.si/ and confirm/add the exception.
 
 Close FF.
 

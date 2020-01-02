@@ -352,15 +352,27 @@ class TorProxy {
    * @return \Facebook\WebDriver\Remote\RemoteWebElement
    */
   protected function clickById($id) {
-    $element = $this->seleniumDriver->wait(10, 1000)->until(
-      WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($id))
-    );
-    $element->getLocationOnScreenOnceScrolledIntoView();
-    return $element->click();
+    return $this->getElementById($id)->click();
   }
   protected function writeById($id, $value) {
     return $this->clickById($id)
       ->sendKeys($value);
+  }
+
+  protected function getElementById($id) {
+    $element = $this->seleniumDriver->wait(10, 1000)->until(
+      WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($id))
+    );
+    $element->getLocationOnScreenOnceScrolledIntoView();
+    return $element;
+  }
+
+  protected function getElementByCssSelector($selector) {
+    return $this->getSeleniumDriver()->findElement(WebDriverBy::cssSelector($selector));
+  }
+
+  protected function waitUntilElement($elementId) {
+    return $this->getSeleniumDriver()->wait()->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($elementId)));
   }
 
   public function logOut() {
@@ -444,6 +456,10 @@ class TorProxy {
   protected function transformDate($date) {
     $newDate = \DateTime::createFromFormat('j-M-Y', $date);
     return $newDate->format('d.m.Y');
+  }
+
+  public function goBack() {
+    return $this->getSeleniumDriver()->navigate()->back();
   }
 
 }
