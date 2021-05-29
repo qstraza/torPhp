@@ -57,26 +57,19 @@ class OrozjeItem {
 
 //    $tor->enableAllDisabledElements();
     if ($this->isEU) {
-      if ($this->drzava == 'Slovenia') {
-        $tor->setDrzavaProdaje('Slovenia');
+      if ($this->drzava == 'Slovenija') {
+        $tor->setDrzavaProdaje('Slovenija');
         $tor->setKupecNazivPriimekIme($this->getIme());
-        $tor->setVrstaKupca($this->getIsPodjetje() ? 'Trgovec z orožjem' : 'Posameznik');
       }
       else {
-        sleep(3);
         $tor->setDrzavaProdaje('Transfer v EU');
-        sleep(2);
         $tor->setKupecNazivPriimekIme($this->getIme());
-        sleep(2);
-        $tor->setVrstaKupca($this->getIsPodjetje() ? 'Trgovec z orožjem' : 'Posameznik');
-        sleep(1);
         $tor->setDrzava($this->getDrzava());
       }
     }
     else {
       $tor->setDrzavaProdaje('Izvoz');
       $tor->setKupecNazivPriimekIme($this->getIme());
-      $tor->setVrstaKupca($this->getIsPodjetje() ? 'Trgovec z orožjem' : 'Posameznik');
       $tor->setDrzava($this->getDrzava());
     }
 
@@ -116,7 +109,7 @@ class OrozjeItem {
 //    $tor->setDatumPrevzemaVrnitveOrozja($this->date);
 //    $tor->setStPriglasitvenegaLista($this->getStPrigasitvenegaLista());
     $tor->setOpomba($this->getOpombaTor());
-
+    $tor->setVrstaKupca($this->getIsPodjetje() ? 'Trgovec z orožjem' : 'Posameznik');
     $error = $tor->confirmPage();
     echo $error;
     if ($error !== null) {
@@ -152,6 +145,81 @@ class OrozjeItem {
       $this->returnMessage = "Izdelano";
     }
   }
+
+    public function fix(TorRealizacijaOrozja $tor) {
+        $error = $tor->openItemBySerial($this->getSerijska());
+        if ($error !== null) {
+            $this->returnMessage = $error;
+            $this->error = true;
+            return;
+        }
+
+        if ($this->isEU) {
+            if ($this->drzava == 'Slovenija') {
+                $tor->setDrzavaProdaje('Slovenija');
+                $tor->setKupecNazivPriimekIme($this->getIme());
+            }
+            else {
+                $tor->setDrzavaProdaje('Transfer v EU');
+                $tor->setKupecNazivPriimekIme($this->getIme());
+                $tor->setDrzava($this->getDrzava());
+            }
+        }
+        else {
+            $tor->setDrzavaProdaje('Izvoz');
+            $tor->setKupecNazivPriimekIme($this->getIme());
+            $tor->setDrzava($this->getDrzava());
+        }
+
+//    if ($this->getIsPodjetje()) {
+//      $tor->setMaticnaDavcnaPoslovnegaSubjekta($this->getDavcna());
+//    }
+        $tor->setNaselje($this->getMesto());
+        $tor->setUlica($this->getNaslov());
+        $tor->setHst('/');
+
+        switch ($this->getVrstaDovoljenja()) {
+            case 'brez':
+                $tor->setVrstaDovoljenja('Drugo');
+                $tor->setVrstaDovoljenjaDrugo('Listina ni potrebna');
+                break;
+            case 'iznos v EU':
+                $tor->setVrstaDovoljenja('Dovoljenje za iznos orožja iz RS v EU');
+                break;
+            case 'izvoz izven EU':
+                $tor->setVrstaDovoljenja('Dovoljenje za izvoz orožja');
+                break;
+            case 'nabavno dovoljenje':
+                $tor->setVrstaDovoljenja('Dovoljenje za nabavo orožja');
+                break;
+            case 'priglasitev':
+                $tor->setVrstaDovoljenja('Drugo');
+                $tor->setVrstaDovoljenjaDrugo('Priglasitveni list');
+                break;
+        }
+        if ($this->getVrstaDovoljenja() != 'brez') {
+            $tor->setOrganIzdaje($this->getOrganIzdaje());
+            $tor->setStevilkaListine($this->getStevilkaListine());
+            $tor->setDatumIzdajeListine($this->getDatumIzdajeListine());
+        }
+        $tor->setDatumProdaje($this->date);
+//    $tor->setPrevzemnikOrozja($this->ime);
+//    $tor->setDatumPrevzemaVrnitveOrozja($this->date);
+//    $tor->setStPriglasitvenegaLista($this->getStPrigasitvenegaLista());
+        $tor->setOpomba($this->getOpombaTor());
+        $tor->setVrstaKupca($this->getIsPodjetje() ? 'Trgovec z orožjem' : 'Posameznik');
+        $error = $tor->confirmPage();
+        echo $error;
+        if ($error !== null) {
+            // We have an error
+            $this->returnMessage = $error;
+            $this->error = true;
+        }
+        else {
+            // All good.
+            $this->returnMessage = "Realizirano";
+        }
+    }
 
   /**
    * @return mixed

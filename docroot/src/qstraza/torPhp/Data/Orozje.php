@@ -42,6 +42,7 @@ class Orozje extends SpreadSheetData {
         $row->setCal($values['kaliber']);
         $row->setSerijska($serijska);
         $row->setIzdelan($values['izdelan'] == "Da" ? TRUE : FALSE);
+        $row->setOpombaTor($values['opombator']);
         $podjetje = $this->getCompanyData($values['ime']);
 
         if ($podjetje) {

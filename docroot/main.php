@@ -91,6 +91,58 @@ if (count($argv) >= 2) {
         } while ($tor->prevPage());
 
         break;
+        case 'getModels':
+            $tor = new TorIskanje($argv[1]);
+
+            $lines = explode("\n", $contents = file_get_contents('/app/lines.csv'));
+            $i = 1;
+            foreach ($lines as $line) {
+                $serial = trim($line);
+                if (strlen($serial) > 3) {
+                    $tor->openItemBySerial($serial, 'Podrobnosti');
+                    $model = $tor->getModelFromPage();
+                    $dobavnica = $tor->getDobavnicaFromPage();
+                    echo $serial . ';' . $model . ';' . $dobavnica . "\n";
+                    file_put_contents("out.csv", $serial . ';' . $model . ';' . $dobavnica . "\n", FILE_APPEND | LOCK_EX);
+                }
+                else {
+                    continue;
+                }
+                $tempcontent = str_replace($line, "", $contents);
+                $contents = $tempcontent;
+                $fp = fopen('/app/lines.csv', "w");
+                fwrite($fp, $contents);
+                fclose($fp);
+            }
+        case 'fix':
+            $tor = new TorIskanje($argv[1]);
+
+            $lines = explode("\n", $contents = file_get_contents('/app/lines.csv'));
+            print_r($contents);echo "\n";
+            $i = 1;
+            foreach ($lines as $line) {
+                $data = explode(";", $line);
+                if (is_array($data) && count($data) == 2) {
+                    $serial = $data[0];
+                    $type = $data[1];
+                    echo $i++ . '/' . count($lines). ' - ' . $serial . "\n";
+
+                    $tor->openItemBySerial($serial);
+                    $tor->setTipVrstaOrozja(trim($type));
+                    $tor->savePage();
+
+
+                }
+                else {
+                    continue;
+                }
+                $tempcontent = str_replace($line, "", $contents);
+                $contents = $tempcontent;
+                $fp = fopen('/app/lines.csv', "w");
+                fwrite($fp, $contents);
+                fclose($fp);
+            }
+
     }
   }
   catch (\Exception $e) {

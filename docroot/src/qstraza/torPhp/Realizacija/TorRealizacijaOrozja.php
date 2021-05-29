@@ -118,6 +118,11 @@ class TorRealizacijaOrozja extends TorRealizacija {
     return $this->vrstaDovoljenjaDrugo;
   }
 
+  public function setOpomba($opomba) {
+    $this->writeById('FM:rel_opombe', $opomba);
+    return $this;
+  }
+
   /**
    * @param mixed $vrstaDovoljenjaDrugo
    * @return TorRealizacijaOrozja

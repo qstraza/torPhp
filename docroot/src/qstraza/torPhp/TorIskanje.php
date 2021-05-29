@@ -227,6 +227,16 @@ class TorIskanje extends TorProxy {
     return $this;
   }
 
+    public function popraviZadetek($n) {
+        $this->changeToWorkingFrame();
+        // Selects and deselects all first to make sure nothing is selected.
+        $this->getSeleniumDriver()->findElement(WebDriverBy::cssSelector("[name='FM:to11DataTable:_id26']"))->click()->click();
+        // Open up N-th hit in new tab if requested. $n = 0 - 9.
+        $this->clickById('FM:to11DataTable:'. $n .':selected');
+        $this->clickById('FM:EditHeader');
+        return $this;
+    }
+
   public function getSteviloZadetkov() {
     return count($this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector('#FM\:to11DataTable tbody tr ')));
   }
@@ -315,6 +325,50 @@ class TorIskanje extends TorProxy {
     return $this;
   }
 
+    public function openItemBySerial($serijska, $type = 'Popravek') {
+        $this->menuClick('TO10');
+        sleep(2);
+        $this->writeById('FM:vno_tov_stevilka', $serijska);
+        $this->clickById('FM:IsciHeader');
+        sleep(1);
+        $error = $this->getErrorStatus();
+        if ($error !== null) {
+            return $error;
+        }
+
+//    $elements = $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector("table#FM\:to11DataTable tbody tr"));
+        $elements = $this->getSeleniumDriver()->findElements(WebDriverBy::xpath('//table[@id="FM:to11DataTable"]/tbody/tr'));
+
+//        if (count($elements) > 1) {
+//            return "Več kot en zadetek za to serijsko!";
+//        }
+        $i = -1;
+        foreach ($elements as $element) {
+//            if (strpos($element->getText(), 'Realizacija') !== false) {
+//                return "Orožje je že realizirano!";
+//            }
+            $i++;
+            if (strpos($element->getText(), 'Vpis') !== false) {
+                break;
+            }
+
+        }
+        sleep(2);
+        $this->clickById('FM:to11DataTable:' . $i . ':selected');
+
+        switch ($type) {
+            case 'Podrobnosti':
+                $buttonId = 'FM:DetailsHeader';
+                break;
+
+            case 'Popravek':
+                $buttonId = 'FM:EditHeader';
+                break;
+        }
+        $this->clickById($buttonId);
+        $this->changeToWorkingFrame();
+    }
+
   public function confirmPage() {
     $this->changeToWorkingFrame();
     $this->clickById('FM:IsciFooter');
@@ -322,5 +376,11 @@ class TorIskanje extends TorProxy {
     $this->changeToWorkingFrame();
     return $this->getErrorStatus();
   }
+
+    public function savePage() {
+        return parent::confirmPage();
+    }
+
+
 
 }

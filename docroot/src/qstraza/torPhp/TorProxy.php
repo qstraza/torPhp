@@ -462,4 +462,11 @@ class TorProxy {
     return $this->getSeleniumDriver()->navigate()->back();
   }
 
+  public function getModelFromPage() {
+      return $this->getElementById('FM:to22Read:vno_model')->getText();
+  }
+
+    public function getDobavnicaFromPage() {
+        return $this->getElementById('FM:to22Read:vno_stv_dobavnice')->getText();
+    }
 }
