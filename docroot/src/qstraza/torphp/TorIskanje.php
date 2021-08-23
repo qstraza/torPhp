@@ -6,7 +6,7 @@
  * Time: 10:40
  */
 
-namespace qstraza\torPhp;
+namespace qstraza\torphp;
 
 use Facebook\WebDriver\WebDriverBy;
 

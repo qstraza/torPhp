@@ -6,7 +6,7 @@
  * Time: 08:52
  */
 
-namespace qstraza\torPhp\Data;
+namespace qstraza\torphp\Data;
 
 
 interface OrozjeItemInterface {

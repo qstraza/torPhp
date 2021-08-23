@@ -6,11 +6,11 @@
  * Time: 08:45
  */
 
-namespace qstraza\torPhp\Data;
+namespace qstraza\torphp\Data;
 
 use Google\Spreadsheet\ListEntry;
-use qstraza\torPhp\Realizacija\TorRealizacijaOrozja;
-use qstraza\torPhp\TorIzdelanoOrozje;
+use qstraza\torphp\Realizacija\TorRealizacijaOrozja;
+use qstraza\torphp\TorIzdelanoOrozje;
 
 class OrozjeItem {
   protected $date;
@@ -52,9 +52,21 @@ class OrozjeItem {
     if ($error !== null) {
       $this->returnMessage = $error;
       $this->error = true;
+      echo "error";
       return;
     }
+    sleep(1);
+    //workingFrame.getElementById("FM:rel_pos_id_mat_stv_kup").removeAttribute("onkeydown");
+    $tor->executeJS('
 
+        //var workingFrame = window.frames["workingScreen"].document;
+        var workingFrame = this.document;
+        workingFrame.getElementById("FM:rel_w64_id_vrste_subjekta").removeAttribute("disabled");
+        workingFrame.getElementById("FM:rel_w64_id_vrste_subjekta").removeAttribute("onchange");
+        workingFrame.getElementById("FM:rel_subjekt").removeAttribute("onchange");
+        workingFrame.getElementById("FM:rel_ds_ms").removeAttribute("onkeydown");
+        console.log(1);
+    ');
 //    $tor->enableAllDisabledElements();
     if ($this->isEU) {
       if ($this->drzava == 'Slovenija') {
@@ -74,7 +86,7 @@ class OrozjeItem {
     }
 
 //    if ($this->getIsPodjetje()) {
-//      $tor->setMaticnaDavcnaPoslovnegaSubjekta($this->getDavcna());
+     $tor->setMaticnaDavcnaPoslovnegaSubjekta($this->getDavcna());
 //    }
     $tor->setNaselje($this->getMesto());
     $tor->setUlica($this->getNaslov());
@@ -105,13 +117,12 @@ class OrozjeItem {
       $tor->setDatumIzdajeListine($this->getDatumIzdajeListine());
     }
     $tor->setDatumProdaje($this->date);
-//    $tor->setPrevzemnikOrozja($this->ime);
-//    $tor->setDatumPrevzemaVrnitveOrozja($this->date);
+    // $tor->setPrevzemnikOrozja($this->ime);
+    // $tor->setDatumPrevzemaVrnitveOrozja($this->date);
 //    $tor->setStPriglasitvenegaLista($this->getStPrigasitvenegaLista());
     $tor->setOpomba($this->getOpombaTor());
     $tor->setVrstaKupca($this->getIsPodjetje() ? 'Trgovec z orožjem' : 'Posameznik');
     $error = $tor->confirmPage();
-    echo $error;
     if ($error !== null) {
       // We have an error
       $this->returnMessage = $error;
@@ -127,6 +138,7 @@ class OrozjeItem {
     $tor->menuClick('TO20');
     $tor->setOrozjeDelOrozja($this->getOrozjeDelOrozja());
     $tor->setKategorijaOrozja($this->getKategorija());
+    sleep(1);
     $tor->setTipVrstaOrozja($this->getVrstaOrozja());
     $tor->setZnamka($this->getProizvajalec());
     $tor->setModel($this->getModel());
@@ -565,10 +577,10 @@ class OrozjeItem {
   }
 
   /**
-   * @param \Google\Spreadsheet\ListEntry $spreadsheetEntry
+   * @param array $spreadsheetEntry
    * @return OrozjeItem
    */
-  public function setSpreadsheetEntry(ListEntry $spreadsheetEntry) {
+  public function setSpreadsheetEntry(array $spreadsheetEntry) {
     $this->spreadsheetEntry = $spreadsheetEntry;
     return $this;
   }

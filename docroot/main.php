@@ -7,10 +7,11 @@
  */
 
 require_once __DIR__ . '/vendor/autoload.php';
-use qstraza\torPhp\Data\Orozje;
-use qstraza\torPhp\Realizacija\TorRealizacijaOrozja;
-use qstraza\torPhp\TorIzdelanoOrozje;
-use qstraza\torPhp\TorIskanje;
+use qstraza\torphp\Data\Orozje;
+use qstraza\torphp\Data\OrozjeItem;
+use qstraza\torphp\Realizacija\TorRealizacijaOrozja;
+use qstraza\torphp\TorIzdelanoOrozje;
+use qstraza\torphp\TorIskanje;
 
 if (count($argv) >= 2) {
   $spreadsheetId = null;
@@ -28,10 +29,10 @@ if (count($argv) >= 2) {
       case 'realiziraj':
         $tor = new TorRealizacijaOrozja($argv[1]);
         $orozje = new Orozje($spreadsheetId, $argv[3], $argv[1]);
-        /** @var \qstraza\torPhp\Data\OrozjeItem $nerealiziranoOrozje */
+        /** @var OrozjeItem $nerealiziranoOrozje */
         // Vrne vse nerealizirane itme iz spreadsheeta
         $nerealiziranoOrozje = $orozje->getNerealizirane();
-        /** @var \qstraza\torPhp\Data\OrozjeItem $item */
+        /** @var OrozjeItem $item */
         foreach ($nerealiziranoOrozje as $item) {
           try {
             $item->realiziraj($tor);
@@ -46,10 +47,10 @@ if (count($argv) >= 2) {
       case 'izdelaj':
         $tor = new TorIzdelanoOrozje($argv[1]);
         $orozje = new Orozje($spreadsheetId, $argv[3], $argv[1]);
-        /** @var \qstraza\torPhp\Data\OrozjeItem $nerealiziranoOrozje */
+        /** @var OrozjeItem $nerealiziranoOrozje */
         // Vrne vse nerealizirane itme iz spreadsheeta
         $neizdelanoOrozje = $orozje->getNeizdelane();
-        /** @var \qstraza\torPhp\Data\OrozjeItem $item */
+        /** @var OrozjeItem $item */
         foreach ($neizdelanoOrozje as $item) {
           try {
             $item->izdelaj($tor);
@@ -129,6 +130,34 @@ if (count($argv) >= 2) {
 
                     $tor->openItemBySerial($serial);
                     $tor->setTipVrstaOrozja(trim($type));
+                    $tor->savePage();
+
+
+                }
+                else {
+                    continue;
+                }
+                $tempcontent = str_replace($line, "", $contents);
+                $contents = $tempcontent;
+                $fp = fopen('/app/lines.csv', "w");
+                fwrite($fp, $contents);
+                fclose($fp);
+            }
+
+        case 'fix2':
+            $tor = new TorIskanje($argv[1]);
+
+            $lines = explode("\n", $contents = file_get_contents('/app/lines.csv'));
+            print_r($contents);echo "\n";
+            $i = 1;
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (strlen($line) > 4) {
+                    $serial = $line;
+                    echo $i++ . '/' . count($lines). ' - ' . $serial . "\n";
+
+                    $tor->openItemBySerial($serial);
+                    $tor->setKategorijaOrozja(trim('C7'));
                     $tor->savePage();
 
 

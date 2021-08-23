@@ -6,7 +6,7 @@
  * Time: 09:29
  */
 
-namespace qstraza\torPhp;
+namespace qstraza\torphp;
 
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Facebook\WebDriver\WebDriverBy;
@@ -142,9 +142,12 @@ class TorProxy {
     // To get valid options, execute following jQuery onpage
     // var output = "";jQuery("select[id$=ui_w05_kategorija_orozja] option").each(function() {output+= "'" + jQuery(this).val() + "', "}); console.log(output)
     $validOptions = [
-      'B-B1', 'B-B2', 'B-B3', 'B-B4', 'B-B5', 'B-B6', 'B-B7', 'C-C1', 'C-C2', 'C-C3', 'C-C4', 'D-D1', 'D-D2', 'D-D3', 'D-D4', 'D-D5', 'D-D6', 'D-D7', 'D-D8', 'D-D9', '9-99',
+      'A-A2', 'A-A6', 'A-A6a', 'A-A7a', 'A-A7b', 'A-A8a', 'A-A9', 'A-A10',
+      'B-B1', 'B-B2', 'B-B3', 'B-B4', 'B-B5b', 'B-B6b', 'B-B7b', 'B-B8', 'B-B9',
+      'C-C1', 'C-C2', 'C-C3', 'C-C4', 'C-C5', 'C-C6', 'C-C7',
+      'D-D2', 'D-D3', 'D-D4', 'D-D5d', 'D-D6', 'D-D7', 'D-D8', 'D-D9', '9-99',
     ];
-    if (in_array($kategorijaOrozja[0], ['B', 'C', 'D', '99'])) {
+    if (in_array($kategorijaOrozja[0], ['A', 'B', 'C', 'D', '99'])) {
       $kategorijaOrozja = $kategorijaOrozja[0] . '-' . $kategorijaOrozja;
       if (in_array($kategorijaOrozja, $validOptions)) {
         $this->kategorijaOrozja = $kategorijaOrozja;
@@ -296,7 +299,7 @@ class TorProxy {
 
   private function changeFrame($frameName) {
     $this->seleniumDriver->switchTo()->defaultContent();
-    $this->seleniumDriver->wait(10, 500)->until(
+    $this->seleniumDriver->wait(2, 50)->until(
       WebDriverExpectedCondition::frameToBeAvailableAndSwitchToIt($frameName)
     );
 //    $frame = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('frame[name=' . $frameName . ']'));
@@ -341,7 +344,7 @@ class TorProxy {
   }
 
   protected function selectOption($id, $val) {
-    $element = $this->seleniumDriver->wait(10, 1000)->until(
+    $element = $this->seleniumDriver->wait(3, 100)->until(
       WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($id))
     );
     $select = new WebDriverSelect($element);
@@ -360,7 +363,7 @@ class TorProxy {
   }
 
   protected function getElementById($id) {
-    $element = $this->seleniumDriver->wait(10, 1000)->until(
+    $element = $this->seleniumDriver->wait(3, 100)->until(
       WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($id))
     );
     $element->getLocationOnScreenOnceScrolledIntoView();
@@ -385,10 +388,11 @@ class TorProxy {
     $this->changeToWorkingFrame();
 
     try {
-      /** @var \Facebook\WebDriver\Remote\RemoteWebElement $errorStatus */
-      $errorStatus = $this->seleniumDriver->wait(10, 1000)->until(
-        WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('span.error-status'))
-      );
+//      /** @var \Facebook\WebDriver\Remote\RemoteWebElement $errorStatus */
+//      $errorStatus = $this->seleniumDriver->wait(1, 100)->until(
+//        WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('span.error-status'))
+//      );
+        $errorStatus = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('span.error-status'));
     }
     catch (\Exception $e) {
       // No error, because no error-status element was found.
@@ -402,6 +406,29 @@ class TorProxy {
     }
     return null;
   }
+
+    protected function getWarningStatus() {
+        $this->changeToWorkingFrame();
+
+        try {
+//            /** @var \Facebook\WebDriver\Remote\RemoteWebElement $errorStatus */
+//            $errorStatus = $this->seleniumDriver->wait(1, 100)->until(
+//                WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('span.warning-status'))
+//            );
+            $errorStatus = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('span.warning-status'));
+        }
+        catch (\Exception $e) {
+            // No error, because no error-status element was found.
+            return null;
+        }
+//    if ($errorStatus = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('span.error-status'))) {
+        if ($errorStatus) {
+            if ($errorText = $errorStatus->getText()) {
+                return $errorText;
+            }
+        }
+        return null;
+    }
 
   /**
    * @return mixed
@@ -431,11 +458,33 @@ class TorProxy {
     $this->clickById('FM:potrdiButton');
     sleep(2);
     $this->changeToWorkingFrame();
-    return $this->getErrorStatus();
+    // id = FM:naslov
+    // Podatki so bili uspe\u0161no shranjeni!
+      try {
+          $ok = $this->seleniumDriver->findElement(WebDriverBy::id('FM:naslov'));
+          if ($ok->getText() == 'Podatki so bili uspešno shranjeni!') {
+              return null;
+          }
+          else {
+              throw new \Exception();
+          }
+      }
+      catch (\Exception $e) {
+          $errorStatus = $this->getErrorStatus();
+          if ($errorStatus) {
+              return $errorStatus;
+          }
+          $warningStatus = $this->getWarningStatus();
+          if ($warningStatus) {
+              return $warningStatus;
+          }
+          return null;
+      }
+
   }
 
   public function enableAllDisabledElements() {
-    $this->getSeleniumDriver()->wait(10, 1000)->until(
+    $this->getSeleniumDriver()->wait(3, 100)->until(
       WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id('FM:to22Read:vno_w60_id_orozja_dela'))
     );
     $this->getSeleniumDriver()->executeScript('
@@ -469,4 +518,9 @@ class TorProxy {
     public function getDobavnicaFromPage() {
         return $this->getElementById('FM:to22Read:vno_stv_dobavnice')->getText();
     }
+
+  public function executeJS($js) {
+    $this->getSeleniumDriver()->executeScript($js);
+    return $this;
+  }
 }

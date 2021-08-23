@@ -6,7 +6,7 @@
  * Time: 16:45
  */
 
-namespace qstraza\torPhp\Realizacija;
+namespace qstraza\torphp\Realizacija;
 
 
 use Facebook\WebDriver\WebDriverBy;
@@ -74,6 +74,7 @@ class TorRealizacijaOrozja extends TorRealizacija {
   public function setMaticnaStPoslovalnice($maticnaStPoslovalnice) {
     $this->maticnaStPoslovalnice = $maticnaStPoslovalnice;
     $this->writeById('FM:rel_pos_id_mat_stv', $maticnaStPoslovalnice);
+    $this->writeById('FM:rel_ds_ms', $maticnaStPoslovalnice);
     return $this;
   }
 
@@ -151,7 +152,7 @@ class TorRealizacijaOrozja extends TorRealizacija {
 
   public function openItemBySerial($serijska) {
     $this->menuClick('TO10');
-    sleep(4);
+    sleep(1);
     $this->writeById('FM:vno_tov_stevilka', $serijska);
     $this->clickById('FM:IsciHeader');
     sleep(1);
@@ -163,16 +164,23 @@ class TorRealizacijaOrozja extends TorRealizacija {
 //    $elements = $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector("table#FM\:to11DataTable tbody tr"));
     $elements = $this->getSeleniumDriver()->findElements(WebDriverBy::xpath('//table[@id="FM:to11DataTable"]/tbody/tr'));
 
-    if (count($elements) > 1) {
-      return "Več kot en zadetek za to serijsko!";
-    }
+    // if (count($elements) > 1) {
+    //   return "Več kot en zadetek za to serijsko!";
+    // }
+
+    // foreach ($elements as $element) {
+    //   if (strpos($element->getText(), 'Realizacija') !== false) {
+    //     return "Orožje je že realizirano!";
+    //   }
+    // }
 
     foreach ($elements as $element) {
-      if (strpos($element->getText(), 'Realizacija') !== false) {
-        return "Orožje je že realizirano!";
+      if (strpos($element->getText(), 'Vpis') === false) {
+        return "Orožja ne morem realizirati!";
       }
+      break;
     }
-    sleep(2);
+    sleep(0.5);
     $this->clickById('FM:to11DataTable:0:selected');
     $this->clickById('FM:RealizationHeader');
     $this->changeToWorkingFrame();

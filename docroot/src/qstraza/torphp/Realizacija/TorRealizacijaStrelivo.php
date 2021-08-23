@@ -6,7 +6,7 @@
  * Time: 18:16
  */
 
-namespace qstraza\torPhp\Realizacija;
+namespace qstraza\torphp\Realizacija;
 
 
 class TorRealizacijaStrelivo extends TorRealizacija {

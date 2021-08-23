@@ -1,5 +1,5 @@
 {
-  "name": "qstraza/torPhp",
+  "name": "qstraza/torphp",
   "description": "Application to help you fill the TOR application, used by firearms dealers in Slovenia.",
   "license": "MIT",
   "keywords": ["Tor"],
@@ -11,7 +11,6 @@
   ],
   "require": {
     "facebook/webdriver": "^1.4",
-    "asimlqt/php-google-spreadsheet-client": "3.0.*",
     "google/apiclient": "^2.0"
   },
   "require-dev": {
@@ -19,7 +18,7 @@
   },
   "autoload": {
     "psr-4": {
-      "qstraza\\torPhp\\": "src"
+      "qstraza\\torphp\\": "src/qstraza/torphp/"
     }
   }
 }

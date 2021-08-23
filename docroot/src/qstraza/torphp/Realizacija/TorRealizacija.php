@@ -6,10 +6,10 @@
  * Time: 16:44
  */
 
-namespace qstraza\torPhp\Realizacija;
+namespace qstraza\torphp\Realizacija;
 
 
-use qstraza\torPhp\TorProxy;
+use qstraza\torphp\TorProxy;
 
 class TorRealizacija extends TorProxy {
   private $vrnitev;
@@ -176,7 +176,8 @@ class TorRealizacija extends TorProxy {
    */
   public function setMaticnaDavcnaPoslovnegaSubjekta($maticnaDavcnaPoslovnegaSubjekta) {
     $this->maticnaDavcnaPoslovnegaSubjekta = $maticnaDavcnaPoslovnegaSubjekta;
-    $this->writeById('FM:rel_pos_id_mat_stv_kup', $maticnaDavcnaPoslovnegaSubjekta);
+    // $this->writeById('FM:rel_pos_id_mat_stv_kup', $maticnaDavcnaPoslovnegaSubjekta);
+    $this->writeById('FM:rel_ds_ms', $maticnaDavcnaPoslovnegaSubjekta);
     return $this;
   }
 
@@ -329,7 +330,5 @@ class TorRealizacija extends TorProxy {
     $this->writeById('FM:rel_dtm_izdaje_lst', $datumIzdajeListine);
     return $this;
   }
-
-
 
 }
