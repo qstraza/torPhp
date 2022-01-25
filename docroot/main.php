@@ -123,16 +123,44 @@ if (count($argv) >= 2) {
             $i = 1;
             foreach ($lines as $line) {
                 $data = explode(";", $line);
-                if (is_array($data) && count($data) == 2) {
-                    $serial = $data[0];
+                if (is_array($data) && count($data) == 3) {
+                    $serial = $data[2];
                     $type = $data[1];
+                    $kategorija = $data[0];
                     echo $i++ . '/' . count($lines). ' - ' . $serial . "\n";
 
-                    $tor->openItemBySerial($serial);
+                    $tor->openItemBySerial(trim($serial));
+                    // $tor->setKategorijaOrozja(trim($kategorija));
+                    // sleep(2);
                     $tor->setTipVrstaOrozja(trim($type));
                     $tor->savePage();
 
 
+                }
+                else {
+                    continue;
+                }
+                $tempcontent = str_replace($line, "", $contents);
+                $contents = $tempcontent;
+                $fp = fopen('/app/lines.csv', "w");
+                fwrite($fp, $contents);
+                fclose($fp);
+            }
+
+        case 'brisiRealizacijo':
+            $tor = new TorIskanje($argv[1]);
+            $tor->deleteRealizacijoBySerial('00728');
+            break;
+            $lines = explode("\n", $contents = file_get_contents('/app/lines.csv'));
+            print_r($contents);echo "\n";
+            $i = 1;
+            foreach ($lines as $line) {
+                $data = explode(";", $line);
+                if (is_array($data) && count($data)) {
+                    $serial = $data[0];
+                    echo $i++ . '/' . count($lines). ' - ' . $serial . "\n";
+
+                    $tor->deleteRealizacijoBySerial(trim($serial), 'Podrobnosti');
                 }
                 else {
                     continue;

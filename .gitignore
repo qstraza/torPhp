@@ -6,3 +6,4 @@
 /docroot/config.php
 docker-compose.yml
 .idea
+docroot/*.csv

@@ -369,6 +369,19 @@ class TorIskanje extends TorProxy {
         $this->changeToWorkingFrame();
     }
 
+  public function deleteRealizacijo() {
+      $this->clickById('FM:to12DataTable:0:selected');
+      $this->clickById('FM:ErrorRelHeader');
+      sleep(1);
+      $this->changeToWorkingFrame();
+      $this->clickById('FM:potrdiButton');
+      $this->changeToWorkingFrame();
+  }
+  public function deleteRealizacijoBySerial($serial) {
+      $this->openItemBySerial($serial, 'Podrobnosti');
+      sleep(1);
+      $this->deleteRealizacijo();
+  }
   public function confirmPage() {
     $this->changeToWorkingFrame();
     $this->clickById('FM:IsciFooter');
