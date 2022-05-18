@@ -55,5 +55,9 @@ class TorIzdelanoOrozje extends TorProxy {
   public function getDatumIzdelave() {
     return $this->datumIzdelave;
   }
+  public function setOpomba($opomba) {
+    $this->writeById('FM:vno_opombe', $opomba);
+    return $this;
+  }
 
 }

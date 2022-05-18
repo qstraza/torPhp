@@ -145,6 +145,7 @@ class OrozjeItem {
     $tor->setKaliber($this->getCal());
     $tor->setTovarniskaStevilka($this->getSerijska());
     $tor->setDatumIzdelave($this->getDate());
+    $tor->setOpomba($this->getOpombaTor());
 
     $error = $tor->confirmPage();
     if ($error !== null) {
