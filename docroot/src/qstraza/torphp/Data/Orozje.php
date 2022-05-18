@@ -150,6 +150,7 @@ class Orozje extends SpreadSheetData {
                   $row->setCal($entry[$this->getZapisnik('Kaliber')]);
                   $row->setSerijska($serijska);
                   $row->setDate($entry[$this->getZapisnik('Datum')]);
+                  $row->setOpombaTor($entry[$this->getZapisnik('Opomba TOR')]);
 
                   $row->setSpreadsheetEntry($entry);
                   $rows[] = $row;
