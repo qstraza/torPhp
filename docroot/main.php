@@ -146,21 +146,27 @@ if (count($argv) >= 2) {
                 fwrite($fp, $contents);
                 fclose($fp);
             }
-
         case 'brisiRealizacijo':
             $tor = new TorIskanje($argv[1]);
-            $tor->deleteRealizacijoBySerial('00728');
-            break;
             $lines = explode("\n", $contents = file_get_contents('/app/lines.csv'));
             print_r($contents);echo "\n";
             $i = 1;
             foreach ($lines as $line) {
                 $data = explode(";", $line);
-                if (is_array($data) && count($data)) {
-                    $serial = $data[0];
+                if (is_array($data) && count($data) > 1) {
+                    $serial = trim($data[0]);
+                    $kategorija = trim($data[1]);
+                    $tipvrsta = trim($data[2]);
                     echo $i++ . '/' . count($lines). ' - ' . $serial . "\n";
 
-                    $tor->deleteRealizacijoBySerial(trim($serial), 'Podrobnosti');
+                    // $tor->deleteRealizacijoBySerial($serial);
+
+                    // sleep(2);
+                    $tor->openItemBySerial($serial);
+                    $tor->setKategorijaOrozja($kategorija);
+                    sleep(1);
+                    $tor->setTipVrstaOrozja($tipvrsta);
+                    $tor->savePage();
                 }
                 else {
                     continue;
