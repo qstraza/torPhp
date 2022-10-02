@@ -1,0 +1,4 @@
+DIR=/home/rok/torPhp
+
+*/1 8-18 * * 1-7        root    /usr/bin/python3 $DIR/cron/rojal.py $DIR >/dev/null 2>&1
+0 20 * * 1-5            root    touch $DIR/cron/runs/rojal_orozje && touch $DIR/cron/runs/rojal_strelivo && /usr/bin/python3 $DIR/cron/rojal.py $DIR >/dev/null 2>&1

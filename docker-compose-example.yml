@@ -1,12 +1,37 @@
 version: '2'
 services:
   php:
-    image: torphp
+    build: .
     volumes:
       - ./firefox-profiles:/root/.mozilla/firefox
       - ./google-jsons:/google-jsons:ro
+      - ./docroot:/app
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "1m"
+    environment:
+      - TZ=Europe/Ljubljana
 
   selenium:
-    image: selenium/standalone-firefox-debug:3.4.0-chromium
+    image: selenium/standalone-firefox-debug:3.141.59
     ports:
-      - "5900:5900"
+      - "127.0.0.1:5900:5900"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+
+  phpnginx:
+    image: trafex/php-nginx
+    volumes:
+      - ./cron/server.php:/var/www/html/index.php
+      - ./cron/runs:/var/www/runs
+    ports:
+      - "40000:8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"

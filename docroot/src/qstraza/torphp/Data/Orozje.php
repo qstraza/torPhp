@@ -11,222 +11,201 @@ namespace qstraza\torphp\Data;
 
 use Google_Service_Sheets_ValueRange;
 
-class Orozje extends SpreadSheetData {
-  protected $worksheet;
-  protected $cellFeed;
+class Orozje extends SpreadSheetData
+{
+    protected $worksheet;
+    protected $method;
 
-  public function __construct($spreadsheetId = null, $worksheetName = null, $clientName = null) {
-    parent::__construct($spreadsheetId, $worksheetName, $clientName);
-//    $this->worksheet = $this->worksheetFeed->getByTitle($this->worksheetName);
-//    $this->cellFeed = $this->worksheet->getCellFeed();
-  }
+    public function __construct($spreadsheetId = null, $worksheetName = null, $clientName = null)
+    {
+        parent::__construct($spreadsheetId, $worksheetName, $clientName);
+    }
 
-  public function getNerealizirane() {
-    // Get all the rows from spreadsheet which are not yet realizirane (NE)
-      $response = $this->getService()->spreadsheets_values->get($this->getSpreadsheetId(), 'A:R');
-      $i = 1;
-      $rows = [];
-      foreach ($response as $entry) {
-          $entry['rowIndex'] = $i;
-          if ($entry[$this->getZapisnik('Realizirano')] == 'Ne') {
-              foreach ($this->parseMultipleSerialNumbers($entry[$this->getZapisnik('Serijska')]) as $serijska) {
-                  /** @var OrozjeItem $row */
-                  $row = new OrozjeItem();
-                  $row->setDate($entry[$this->getZapisnik('Datum')]);
-                  $row->setIme($entry[$this->getZapisnik('Ime')]);
-                  $row->setOrganIzdaje($entry[$this->getZapisnik('Organ izdaje')]);
-                  $row->setStevilkaListine($entry[$this->getZapisnik('Številka listine')]);
-                  $row->setDatumIzdajeListine($entry[$this->getZapisnik('Datum izdaje listine')]);
-                  $row->setProizvajalec($entry[$this->getZapisnik('Proizvajalec')]);
-                  $row->setModel($entry[$this->getZapisnik('Model')]);
-                  $row->setCal($entry[$this->getZapisnik('Kaliber')]);
-                  $row->setSerijska($serijska);
-                  $row->setIzdelan($entry[$this->getZapisnik('Izdelan')] == "Da");
-                  $row->setOpombaTor($entry[$this->getZapisnik('Opomba TOR')]);
-                  $podjetje = $this->getCompanyData($entry[$this->getZapisnik('Ime')]);
+    public function getNerealizirane()
+    {
+        // Get all the rows from spreadsheet which are not yet realizirane (NE)
+        $response = $this->getSpreadsheetValues($this->getWorksheetName(),'A:ZZ');
+        $this->worksheet = $response;
+        $this->method = "nerealizirane";
+        $i = 1;
+        $rows = [];
+        foreach ($response as $entry) {
+            $entry['rowIndex'] = $i;
+            if ($entry[$this->getZapisnik('Realizirano')] == 'Ne') {
+                if ($GLOBALS['multiSerialNumbersOptionEnabled']) {
+                    $serialNumbers = $this->parseMultipleSerialNumbers($entry[$this->getZapisnik('Serijska')]);
+                } else {
+                    $serialNumbers = [$entry[$this->getZapisnik('Serijska')]];
+                }
+                foreach ($serialNumbers as $serijska) {
+                    /** @var OrozjeItem $row */
+                    $row = new OrozjeItem();
+                    $user = new User();
+                    $user->setIme($entry[$this->getZapisnik('Ime')]);
+                    $user->setNaslov($entry[$this->getZapisnik('Naslov')]);
+                    $user->setMesto($entry[$this->getZapisnik('Mesto')]);
+                    $user->setDrzava($entry[$this->getZapisnik('Država')]);
+                    $user->setDavcna($entry[$this->getZapisnik('Davčna')]);
+                    $user->setVrstaKupca($entry[$this->getZapisnik('Vrsta kupca')]);
+                    $row->setUser($user);
 
-                  if ($podjetje) {
-                      $row->setIsPodjetje(TRUE);
-                      $row->setNaslov($podjetje['Naslov']);
-                      $row->setMesto($podjetje['Mesto']);
-                      $row->setDrzava($podjetje['Drzava']);
-                      $row->setVrstaKupca('Trgovec z orožjem');
-                      $row->setDavcna($podjetje['Davčna']);
-                      $row->setVrstaDovoljenja($entry[$this->getZapisnik('Vrsta dovoljenja')]);
-//                      $row->setOrganIzdaje($entry[$this->getZapisnik('Organ izdaje')]);
-//                      $row->setStevilkaListine($entry[$this->getZapisnik('Številka listine')]);
-//                      $row->setDatumIzdajeListine($entry[$this->getZapisnik('Datum izdaje listine')]);
-                  }
-                  else {
-//                      $row->setNaslov($values['naslov']);
-//                      $row->setMesto($values['mesto']);
-//                      $row->setDrzava($values['drzava']);
-//                      $row->setVrstaKupca($values['vrstakupca']);
-//                      $row->setVrstaDovoljenja($values['vrstadovoljenja']);
-//                      $row->setStevilkaListine($values['stpriglasitvenegalista']);
-//                      $row->getVrstaOrozja($values['vrstaorozja']);
-                  }
+                    $row->setDrzava($entry[$this->getZapisnik('Država')]);
+                    $row->setDate($entry[$this->getZapisnik('Datum')]);
+                    $row->setIsEU($entry[$this->getZapisnik('EU?')] == "Da");
+                    $row->setVrstaDovoljenja($entry[$this->getZapisnik('Vrsta dovoljenja')]);
+                    $row->setOrganIzdaje($entry[$this->getZapisnik('Organ izdaje')]);
+                    $row->setStevilkaListine($entry[$this->getZapisnik('Številka listine')]);
+                    $row->setDatumIzdajeListine($entry[$this->getZapisnik('Datum izdaje listine')]);
+                    $row->setKategorija($entry[$this->getZapisnik('Kategorija orožja')]);
+                    $row->setProizvajalec($entry[$this->getZapisnik('Proizvajalec')]);
+                    $row->setZnamka($entry[$this->getZapisnik('Proizvajalec')]);
+                    $row->setModel($entry[$this->getZapisnik('Model')]);
+                    $row->setCal($entry[$this->getZapisnik('Kaliber')]);
+                    $row->setSerijska($serijska);
+                    $row->setOpombaTor($entry[$this->getZapisnik('Opomba TOR')]);
 
+                    if ($GLOBALS['multiSerialNumbersOptionEnabled']) {
+                        $row->setIzdelan($entry[$this->getZapisnik('Izdelano')] == "Da");
+                    }
 
-                  $row->setIsEU($entry[$this->getZapisnik('EU?')] == 'Da');
-                  $row->setSpreadsheetEntry($entry);
-                  $rows[] = $row;
-              }
-          }
-          $i++;
-      }
-      return $rows;
+                    $row->setSpreadsheetEntry($entry);
+                    $rows[] = $row;
+                }
+            }
+            $i++;
+        }
+        return $rows;
 
+    }
 
-    /** @var \Google\Spreadsheet\ListFeed $listFeed */
-    $listFeed = $this->worksheet->getListFeed(["sq" => "realizirano = Ne"]);
-    $rows = [];
-    foreach ($listFeed->getEntries() as $entry) {
-      $entry->update(['torphp' => ""]);
-      $values = $entry->getValues();
-      if ($values['realizirano'] != "Ne") continue;
-      foreach($this->parseMultipleSerialNumbers($values['serijska']) as $serijska) {
-        /** @var OrozjeItem $row */
-        $row = new OrozjeItem();
-        $row->setDate($values['datum']);
-        $row->setIme($values['ime']);
-        $row->setOrganIzdaje($values['organizdaje']);
-        $row->setStevilkaListine($values['številkalistine']);
-        $row->setDatumIzdajeListine($values['datumizdajelistine']);
-        $row->setProizvajalec($values['proizvajalec']);
-        $row->setModel($values['model']);
-        $row->setCal($values['kaliber']);
-        $row->setSerijska($serijska);
-        $row->setIzdelan($values['izdelan'] == "Da" ? TRUE : FALSE);
-        $row->setOpombaTor($values['opombator']);
-        $podjetje = $this->getCompanyData($values['ime']);
+    public function getNeizdelane()
+    {
+        // Get all the rows from spreadsheet which are not yet izdelane (NE)
+        $response = $this->getSpreadsheetValues($this->getWorksheetName(),'A:ZZ');
+        $this->worksheet = $response;
+        $this->method = "neizdelane";
+        $i = 1;
+        $rows = [];
+        foreach ($response as $entry) {
+            $entry['rowIndex'] = $i;
+            if ($entry[$this->getZapisnik('Izdelano')] == 'Ne') {
+                foreach ($this->parseMultipleSerialNumbers($entry[$this->getZapisnik('Serijska')]) as $serijska) {
+                    /** @var OrozjeItem $row */
+                    $row = new OrozjeItem();
+                    $row->setOrozjeDelOrozja($entry[$this->getZapisnik('Orožje/del orožja')]);
+                    $row->setKategorija($entry[$this->getZapisnik('Kategorija orožja')]);
+                    $row->setVrstaOrozja($entry[$this->getZapisnik('Tip/vrsta orožja')]);
+                    $row->setProizvajalec($entry[$this->getZapisnik('Proizvajalec')]);
+                    $row->setModel($entry[$this->getZapisnik('Model')]);
+                    $row->setCal($entry[$this->getZapisnik('Kaliber')]);
+                    $row->setSerijska($serijska);
+                    $row->setDate($entry[$this->getZapisnik('Datum')]);
+                    $row->setOpombaTor($entry[$this->getZapisnik('Opomba TOR')]);
 
-        if ($podjetje) {
-          $row->setIsPodjetje(TRUE);
-          $row->setNaslov($podjetje['naslov']);
-          $row->setMesto($podjetje['mesto']);
-          $row->setDrzava($podjetje['drzava']);
-          $row->setVrstaKupca('Trgovec z orožjem');
-          $row->setDavcna($podjetje['davčna']);
-          $row->setVrstaDovoljenja($values['vrstadovoljenja']);
-          $row->setOrganIzdaje($values['organizdaje']);
-          $row->setStevilkaListine($values['številkalistine']);
-          $row->setDatumIzdajeListine($values['datumizdajelistine']);
+                    $row->setSpreadsheetEntry($entry);
+                    $rows[] = $row;
+                }
+            }
+            $i++;
+        }
+        return $rows;
+    }
+
+    private function parseMultipleSerialNumbers($serials)
+    {
+        $serials = explode(",", $serials);
+        $createdSerials = [];
+        foreach ($serials as $key => &$serial) {
+            $serial = trim($serial);
+            if (substr_count($serial, "-") === 1) {
+                // We found a "-" which means that serial has "from to", eg:
+                // 111-114, which means we need to create 111,112,113,114.
+                // eg2: 17A00321-17A00323 which translates to 17A00321,17A00322,17A00323
+                // Strangely doing ++ on 17A00321 works as expected, even if you have
+                // 17A00999, it will increase it to 17A01000.
+                $parts = explode("-", $serial);
+                $start = trim($parts[0]);
+                $end = trim($parts[1]);
+                // First part must be the same length as end part. Reason for this is
+                // because some serials have only one - but they are not meant to be
+                // continues, eg is Voltran: E4VP-17090299.
+                if (strlen($start) === strlen($end)) {
+                    $createdSerials[] = $start;
+                    while ($start != $end) {
+                        $createdSerials[] = ++$start;
+                    }
+                    unset($serials[$key]);
+                }
+            }
+        }
+        if ($createdSerials) {
+            $serials = array_merge($serials, $createdSerials);
+        }
+        return $serials;
+    }
+
+    public function logs(OrozjeItem $orozjeItem, $type, $msg, $isError)
+    {
+        if ($GLOBALS['multiSerialNumbersOptionEnabled']) {
+            static $i = 2;
+
+            $date = new \DateTime();
+            $values = [
+                [
+                    $type,
+                    $orozjeItem->getSerijska(),
+                    $msg,
+                    $date->format('d-m-Y H:i:s'),
+                    $isError ? "FAIL" : "OK",
+                ],
+                // Additional rows ...
+            ];
+            $body = new Google_Service_Sheets_ValueRange([
+                'values' => $values
+            ]);
+            $params = [
+                'valueInputOption' => 'USER_ENTERED'
+            ];
+
+            $response = $this->service->spreadsheets_values->update($this->getSpreadsheetId(), 'logs!A' . $i . ':E' . $i,
+                $body, $params);
+            $i++;
+            return $response;
+        }
+        elseif($this->method == "nerealizirane") {
+            $rowIndex = $orozjeItem->getSpreadsheetEntry()['rowIndex'];
+            $letter = $this->columnToLetter($this->getZapisnik('TorPHP'));
+            $body = date('d-m-Y H:i:s') . " - " . $msg;
+            $this->updateCell("{$this->getWorksheetName()}!{$letter}{$rowIndex}", $body);
+
+            if (!$isError) {
+                $letter = $this->columnToLetter($this->getZapisnik('Realizirano'));
+                $this->updateCell("{$this->getWorksheetName()}!{$letter}{$rowIndex}", "Da");
+            }
+        }
+    }
+
+    public function logsMulti($rowIndex, $serial, $msg, $isError) {
+        $letter = $this->columnToLetter($this->getZapisnik('TorPHP'));
+        $cellValue = $this->getCellValue($this->getWorksheetName(), $letter . $rowIndex);
+        $date = new \DateTime();
+        $currentTime = $date->format('d-m-Y H:i:s');
+
+        $text = $isError ? "FAIL - {$serial}" : "OK - {$serial}";
+        $text .= " ({$msg}) / {$currentTime}\n";
+        $body = $cellValue . $text;
+        $this->updateCell("{$this->getWorksheetName()}!{$letter}{$rowIndex}", $body);
+    }
+
+    public function setFieldDa($rowIndex, $type)
+    {
+        if ($type == "Izdelano") {
+            $letter = $this->columnToLetter($this->getZapisnik('Izdelano'));
         }
         else {
-          $row->setNaslov($values['naslov']);
-          $row->setMesto($values['mesto']);
-          $row->setDrzava($values['drzava']);
-          $row->setVrstaKupca($values['vrstakupca']);
-          $row->setVrstaDovoljenja($values['vrstadovoljenja']);
-          $row->setStevilkaListine($values['stpriglasitvenegalista']);
-          $row->getVrstaOrozja($values['vrstaorozja']);
+            $letter = $this->columnToLetter($this->getZapisnik('Realizirano'));
         }
-
-
-        $row->setIsEU($values['eu'] == 'Da' ? TRUE : FALSE);
-        $row->setSpreadsheetEntry($entry);
-        $rows[] = $row;
-      }
+        $this->updateCell("{$this->getWorksheetName()}!{$letter}{$rowIndex}", "Da");
     }
-    return $rows;
-  }
-    public function getNeizdelane() {
-    // Get all the rows from spreadsheet which are not yet izdelane (NE)
-      $response = $this->getService()->spreadsheets_values->get($this->getSpreadsheetId(), 'A:R');
-      $i = 1;
-      $rows = [];
-      foreach ($response as $entry) {
-          $entry['rowIndex'] = $i;
-          if ($entry[$this->getZapisnik('Izdelano')] == 'Ne') {
-              foreach($this->parseMultipleSerialNumbers($entry[$this->getZapisnik('Serijska')]) as $serijska) {
-                  /** @var OrozjeItem $row */
-                  $row = new OrozjeItem();
-                  $row->setOrozjeDelOrozja("Orožje");
-                  $row->setKategorija("D6");
-                  $row->setVrstaOrozja("Puška");
-                  $row->setProizvajalec($entry[$this->getZapisnik('Proizvajalec')]);
-                  $row->setModel($entry[$this->getZapisnik('Model')]);
-                  $row->setCal($entry[$this->getZapisnik('Kaliber')]);
-                  $row->setSerijska($serijska);
-                  $row->setDate($entry[$this->getZapisnik('Datum')]);
-                  $row->setOpombaTor($entry[$this->getZapisnik('Opomba TOR')]);
-
-                  $row->setSpreadsheetEntry($entry);
-                  $rows[] = $row;
-              }
-          }
-          $i++;
-      }
-      return $rows;
-  }
-
-  private function parseMultipleSerialNumbers($serials) {
-    $serials = explode(",", $serials);
-    $createdSerials = [];
-    foreach ($serials as $key => &$serial) {
-      $serial = trim($serial);
-      if (substr_count($serial, "-") === 1) {
-        // We found a "-" which means that serial has "from to", eg:
-        // 111-114, which means we need to create 111,112,113,114.
-        // eg2: 17A00321-17A00323 which translates to 17A00321,17A00322,17A00323
-        // Strangely doing ++ on 17A00321 works as expected, even if you have
-        // 17A00999, it will increase it to 17A01000.
-        $parts = explode("-", $serial);
-        $start = trim($parts[0]);
-        $end = trim($parts[1]);
-        // First part must be the same length as end part. Reason for this is
-        // because some serials have only one - but they are not meant to be
-        // continues, eg is Voltran: E4VP-17090299.
-        if (strlen($start) === strlen($end)) {
-          $createdSerials[] = $start;
-          while ($start != $end) {
-            $createdSerials[] = ++$start;
-          }
-          unset($serials[$key]);
-        }
-      }
-    }
-    if ($createdSerials) {
-      $serials = array_merge($serials, $createdSerials);
-    }
-    return $serials;
-  }
-
-  public function logs($serial, $type, $msg, $isError) {
-    static $i = 2;
-//    /** @var \Google\Spreadsheet\CellFeed $cellFeed */
-//    $cellFeed = $this->worksheetFeed->getByTitle("logs")->getCellFeed();
-//    $cellFeed->editCell($i, 1, $type);
-//    $cellFeed->editCell($i, 2, $serial);
-//    $cellFeed->editCell($i, 3, $msg);
-//    $date = new \DateTime();
-//    $cellFeed->editCell($i, 4, $date->format('d-m-Y H:i:s'));
-//    $cellFeed->editCell($i, 5, $isError ? "FAIL" : "OK");
-//    $i++;
-
-      $date = new \DateTime();
-      $values = [
-          [
-              $type,
-              $serial,
-              $msg,
-              $date->format('d-m-Y H:i:s'),
-              $isError ? "FAIL" : "OK",
-          ],
-          // Additional rows ...
-      ];
-      $body = new Google_Service_Sheets_ValueRange([
-          'values' => $values
-      ]);
-      $params = [
-          'valueInputOption' => 'USER_ENTERED'
-      ];
-
-      $response = $this->service->spreadsheets_values->update($this->getSpreadsheetId(), 'logs!A' . $i . ':E' . $i,
-          $body, $params);
-      $i++;
-      return $response;
-  }
 
 }

@@ -8,645 +8,451 @@
 
 namespace qstraza\torphp\Data;
 
+use Facebook\WebDriver\WebDriverBy;
 use Google\Spreadsheet\ListEntry;
 use qstraza\torphp\Realizacija\TorRealizacijaOrozja;
 use qstraza\torphp\TorIzdelanoOrozje;
+use qstraza\torphp\TorNabavljenoOrozje;
 
-class OrozjeItem {
-  protected $date;
-  protected $ime;
-  protected $naslov;
-  protected $mesto;
-  protected $vrstaKupca;
-  protected $vrstaDovoljenja;
-  protected $davcna;
-  protected $organIzdaje;
-  protected $stevilkaListine;
-  protected $datumIzdajeListine;
-  protected $stPrigasitvenegaLista;
-  protected $vrstaOrozja;
-  protected $proizvajalec;
-  protected $model;
-  protected $cal;
-  protected $serijska;
-  protected $realiziranTor;
-  protected $drzava;
-  protected $isEU;
-  protected $opombaTor;
-  protected $kategorija;
-  protected $spreadsheetEntry;
-  protected $isPodjetje = false;
-  protected $returnMessage;
-  protected $error = false;
-  protected $izdelan = false;
-  protected $orozjeDelOrozja;
+class OrozjeItem extends OrozjeStrelivoItem
+{
+    protected $stPrigasitvenegaLista;
+    protected $vrstaOrozja;
+    protected $model;
+    protected $serijska;
+    protected $kategorija;
+    protected $izdelan = false;
+    protected $orozjeDelOrozja;
+    protected $letoIzdelave;
+
 
     /**
-   * OrozjeItem constructor.
-   */
-  public function __construct() {
-  }
-
-  public function realiziraj(TorRealizacijaOrozja $tor) {
-    $error = $tor->openItemBySerial($this->getSerijska());
-    if ($error !== null) {
-      $this->returnMessage = $error;
-      $this->error = true;
-      echo "error";
-      return;
-    }
-    sleep(1);
-    //workingFrame.getElementById("FM:rel_pos_id_mat_stv_kup").removeAttribute("onkeydown");
-    $tor->executeJS('
-
-        //var workingFrame = window.frames["workingScreen"].document;
-        var workingFrame = this.document;
-        workingFrame.getElementById("FM:rel_w64_id_vrste_subjekta").removeAttribute("disabled");
-        workingFrame.getElementById("FM:rel_w64_id_vrste_subjekta").removeAttribute("onchange");
-        workingFrame.getElementById("FM:rel_subjekt").removeAttribute("onchange");
-        workingFrame.getElementById("FM:rel_ds_ms").removeAttribute("onkeydown");
-        console.log(1);
-    ');
-//    $tor->enableAllDisabledElements();
-    if ($this->isEU) {
-      if ($this->drzava == 'Slovenija') {
-        $tor->setDrzavaProdaje('Slovenija');
-        $tor->setKupecNazivPriimekIme($this->getIme());
-      }
-      else {
-        $tor->setDrzavaProdaje('Transfer v EU');
-        $tor->setKupecNazivPriimekIme($this->getIme());
-        $tor->setDrzava($this->getDrzava());
-      }
-    }
-    else {
-      $tor->setDrzavaProdaje('Izvoz');
-      $tor->setKupecNazivPriimekIme($this->getIme());
-      $tor->setDrzava($this->getDrzava());
+     * OrozjeItem constructor.
+     */
+    public function __construct()
+    {
     }
 
-//    if ($this->getIsPodjetje()) {
-     $tor->setMaticnaDavcnaPoslovnegaSubjekta($this->getDavcna());
-//    }
-    $tor->setNaselje($this->getMesto());
-    $tor->setUlica($this->getNaslov());
-    $tor->setHst('/');
-
-    switch ($this->getVrstaDovoljenja()) {
-      case 'brez':
-        $tor->setVrstaDovoljenja('Drugo');
-        $tor->setVrstaDovoljenjaDrugo('Listina ni potrebna');
-        break;
-      case 'iznos v EU':
-        $tor->setVrstaDovoljenja('Dovoljenje za iznos orožja iz RS v EU');
-        break;
-      case 'izvoz izven EU':
-        $tor->setVrstaDovoljenja('Dovoljenje za izvoz orožja');
-        break;
-      case 'nabavno dovoljenje':
-      $tor->setVrstaDovoljenja('Dovoljenje za nabavo orožja');
-        break;
-      case 'priglasitev':
-        $tor->setVrstaDovoljenja('Drugo');
-        $tor->setVrstaDovoljenjaDrugo('Priglasitveni list');
-        break;
-    }
-    if ($this->getVrstaDovoljenja() != 'brez') {
-      $tor->setOrganIzdaje($this->getOrganIzdaje());
-      $tor->setStevilkaListine($this->getStevilkaListine());
-      $tor->setDatumIzdajeListine($this->getDatumIzdajeListine());
-    }
-    $tor->setDatumProdaje($this->date);
-    // $tor->setPrevzemnikOrozja($this->ime);
-    // $tor->setDatumPrevzemaVrnitveOrozja($this->date);
-//    $tor->setStPriglasitvenegaLista($this->getStPrigasitvenegaLista());
-    $tor->setOpomba($this->getOpombaTor());
-    $tor->setVrstaKupca($this->getIsPodjetje() ? 'Trgovec z orožjem' : 'Posameznik');
-    $error = $tor->confirmPage();
-    if ($error !== null) {
-      // We have an error
-      $this->returnMessage = $error;
-      $this->error = true;
-    }
-    else {
-      // All good.
-      $this->returnMessage = "Realizirano";
-    }
-  }
-
-  public function izdelaj(TorIzdelanoOrozje $tor) {
-    $tor->menuClick('TO20');
-    $tor->setOrozjeDelOrozja($this->getOrozjeDelOrozja());
-    $tor->setKategorijaOrozja($this->getKategorija());
-    sleep(1);
-    $tor->setTipVrstaOrozja($this->getVrstaOrozja());
-    $tor->setZnamka($this->getProizvajalec());
-    $tor->setModel($this->getModel());
-    $tor->setKaliber($this->getCal());
-    $tor->setTovarniskaStevilka($this->getSerijska());
-    $tor->setDatumIzdelave($this->getDate());
-    $tor->setOpomba($this->getOpombaTor());
-
-    $error = $tor->confirmPage();
-    if ($error !== null) {
-      // We have an error.
-      $this->returnMessage = $error;
-      $this->error = true;
-    }
-    else {
-      // All good.
-      $this->returnMessage = "Izdelano";
-    }
-  }
-
-    public function fix(TorRealizacijaOrozja $tor) {
-        $error = $tor->openItemBySerial($this->getSerijska());
-        if ($error !== null) {
-            $this->returnMessage = $error;
+    public function realiziraj(TorRealizacijaOrozja $tor)
+    {
+        $kategorijaCode = explode(" ", $this->getKategorija());
+        $kategorijaCode = $kategorijaCode[0];
+        switch ($kategorijaCode) {
+            case 'D8':
+            case 'D9':
+                $this->setVrstaEvidence("3 - Nabavljeno in prodano orožje in priglasitveni list");
+                $return = $tor->openItemByCatBrandModel($this->getKategorija(), $this->getZnamka(), $this->getModel(), 'Ne', $this->getVrstaEvidence());
+                if ($return !== null && array_key_exists("error", $return)) {
+                    $this->returnMessage = $return["error"];
+                    $this->error = true;
+                    echo "error";
+                    return;
+                }
+                $tor->setProdanaKolicina($this->getSerijska());
+                break;
+            default:
+                $return = $tor->openItemBySerial($this->getSerijska());
+                if ($return !== null && array_key_exists("vrsta evidence", $return)) {
+                    $this->setVrstaEvidence($return["vrsta evidence"]);
+                }
+        }
+        if ($return !== null && array_key_exists("error", $return)) {
+            $this->returnMessage = $return["error"];
             $this->error = true;
+            echo "error";
             return;
         }
 
-        if ($this->isEU) {
-            if ($this->drzava == 'Slovenija') {
-                $tor->setDrzavaProdaje('Slovenija');
-                $tor->setKupecNazivPriimekIme($this->getIme());
-            }
-            else {
-                $tor->setDrzavaProdaje('Transfer v EU');
-                $tor->setKupecNazivPriimekIme($this->getIme());
-                $tor->setDrzava($this->getDrzava());
-            }
-        }
-        else {
-            $tor->setDrzavaProdaje('Izvoz');
-            $tor->setKupecNazivPriimekIme($this->getIme());
-            $tor->setDrzava($this->getDrzava());
-        }
+        sleep(1);
 
-//    if ($this->getIsPodjetje()) {
-//      $tor->setMaticnaDavcnaPoslovnegaSubjekta($this->getDavcna());
-//    }
-        $tor->setNaselje($this->getMesto());
-        $tor->setUlica($this->getNaslov());
-        $tor->setHst('/');
+        switch (substr($this->getVrstaEvidence(), 0, 1)) {
+            case "1": // Izdelano orožje.
 
-        switch ($this->getVrstaDovoljenja()) {
-            case 'brez':
-                $tor->setVrstaDovoljenja('Drugo');
-                $tor->setVrstaDovoljenjaDrugo('Listina ni potrebna');
+                $selectBuyerButtonId = 145;
+                $potrdiButtonId = 174;
+                $confirmButtonId = 179;
                 break;
-            case 'iznos v EU':
-                $tor->setVrstaDovoljenja('Dovoljenje za iznos orožja iz RS v EU');
-                break;
-            case 'izvoz izven EU':
-                $tor->setVrstaDovoljenja('Dovoljenje za izvoz orožja');
-                break;
-            case 'nabavno dovoljenje':
-                $tor->setVrstaDovoljenja('Dovoljenje za nabavo orožja');
-                break;
-            case 'priglasitev':
-                $tor->setVrstaDovoljenja('Drugo');
-                $tor->setVrstaDovoljenjaDrugo('Priglasitveni list');
+
+            case "3": // Nabavljeno in prodano orožje in priglasitveni list.
+                $tor->setPrevzemnikOrozja($this->getUser()->getIme());
+                $tor->setDatumPrevzemaVrnitveOrozja($this->getDate());
+                $selectBuyerButtonId = 190;
+                $potrdiButtonId = 231;
+                $confirmButtonId = 236;
                 break;
         }
-        if ($this->getVrstaDovoljenja() != 'brez') {
+        $tor->setDrzavaProdaje($this->getDrzava(), $this->getIsEU());
+        $tor->selectBuyer($selectBuyerButtonId, $this->getVrstaEvidence(), $this->getUser());
+        $tor->setVrstaDovoljenja($this->getVrstaDovoljenja());
+
+        if ($this->getVrstaDovoljenja() != "NP - Listina ni potrebna") {
             $tor->setOrganIzdaje($this->getOrganIzdaje());
             $tor->setStevilkaListine($this->getStevilkaListine());
             $tor->setDatumIzdajeListine($this->getDatumIzdajeListine());
         }
         $tor->setDatumProdaje($this->date);
-//    $tor->setPrevzemnikOrozja($this->ime);
-//    $tor->setDatumPrevzemaVrnitveOrozja($this->date);
-//    $tor->setStPriglasitvenegaLista($this->getStPrigasitvenegaLista());
         $tor->setOpomba($this->getOpombaTor());
-        $tor->setVrstaKupca($this->getIsPodjetje() ? 'Trgovec z orožjem' : 'Posameznik');
-        $error = $tor->confirmPage();
-        echo $error;
+
+        $error = $tor->confirmPage($potrdiButtonId, $confirmButtonId);
+
         if ($error !== null) {
             // We have an error
             $this->returnMessage = $error;
             $this->error = true;
-        }
-        else {
+        } else {
             // All good.
             $this->returnMessage = "Realizirano";
         }
     }
 
-  /**
-   * @return mixed
-   */
-  public function getDate() {
-    return $this->date;
-  }
+    public function izdelaj(TorIzdelanoOrozje $tor)
+    {
+        $tor->menuClick('izdelano orozje');
+        $tor->setOrozjeDelOrozja($this->getOrozjeDelOrozja());
+        $tor->setKategorijaOrozja($this->getKategorija());
+        $tor->setTipVrstaOrozja($this->getVrstaOrozja());
+        $tor->setZnamka($this->getProizvajalec());
+        $tor->setModel($this->getModel());
+        $tor->setKaliber($this->getCal());
+        $tor->setTovarniskaStevilka($this->getSerijska());
+        $tor->setDatumIzdelave($this->getDate());
+        $tor->setOpomba($this->getOpombaTor());
+        $error = $tor->confirmPage(118, 123);
+        if ($error !== null) {
+            // We have an error.
+            $this->returnMessage = $error;
+            $this->error = true;
+        } else {
+            // All good.
+            $this->returnMessage = "Izdelano";
+        }
+    }
 
-  /**
-   * @param mixed $date
-   * @return OrozjeItem
-   */
-  public function setDate($date) {
-    $this->date = $date;
-    return $this;
-  }
+    public function izdelajIstiModel(TorIzdelanoOrozje $tor) {
+        try {
+            $tor->clickById("to20DoneDialogForm:j_idt133");
+            sleep(1);
+        } catch (\Exception $e) {
+            $this->returnMessage = "Ne morem klikniti gumba za dodajanje istega modela!";
+            $this->error = true;
+            return;
+        }
 
-  /**
-   * @return mixed
-   */
-  public function getIme() {
-    return $this->ime;
-  }
+        $tor->setTovarniskaStevilka($this->getSerijska());
+        $error = $tor->confirmPage(118, 123);
+        if ($error !== null) {
+            // We have an error.
+            $this->returnMessage = $error;
+            $this->error = true;
+        } else {
+            // All good.
+            $this->returnMessage = "Izdelano";
+        }
+    }
 
-  /**
-   * @param mixed $ime
-   * @return OrozjeItem
-   */
-  public function setIme($ime) {
-    $this->ime = $ime;
-    return $this;
-  }
+    public function nabavi(TorNabavljenoOrozje $tor)
+    {
+        $tor->menuClick('nabavljeno prodano orozje');
+        $tor->setKomisijskaNabava($this->getKomisijskaNabava());
+        $tor->setDrzavaNabave($this->getDrzava(), $this->getIsEU());
+        $tor->selectSeller($this->getUser());
 
-  /**
-   * @return mixed
-   */
-  public function getNaslov() {
-    return $this->naslov;
-  }
+        if ($this->getDrzava() == "Slovenia") {
+            $tor->setVrstaDovoljenja("NP - Listina ni potrebna");
+        } else {
+            if ($this->getIsEU()) {
+                $tor->setVrstaDovoljenja("01 - Dovoljenje za vnos orožja v RS iz EU");
+            } else {
+                $tor->setVrstaDovoljenja("03 - Dovoljenje za uvoz orožja");
+            }
+            $tor->setOrganIzdaje($this->getOrganIzdaje());
+            $tor->setStevilkaListine($this->getStevilkaListine());
+            $tor->setDatumIzdajeListine($this->getDatumIzdajeListine());
+        }
+        $tor->setOrozjeDelOrozja($this->getOrozjeDelOrozja());
+        $tor->setKategorijaOrozja($this->getKategorija());
+        $tor->setTipVrstaOrozja($this->getVrstaOrozja());
+        $tor->setZnamka($this->getZnamka());
+        $tor->setModel($this->getModel());
+        $tor->setKaliber($this->getCal());
 
-  /**
-   * @param mixed $naslov
-   * @return OrozjeItem
-   */
-  public function setNaslov($naslov) {
-    $this->naslov = $naslov;
-    return $this;
-  }
 
-  /**
-   * @return mixed
-   */
-  public function getMesto() {
-    return $this->mesto;
-  }
+        $kategorijaCode = explode(" ", $this->getKategorija());
+        $kategorijaCode = $kategorijaCode[0];
+        switch ($kategorijaCode) {
+            case 'D8':
+            case 'D9':
+                $tor->setKolicina($this->getSerijska());
+                break;
+            default:
+                $tor->setTovarniskaStevilka($this->getSerijska());
+                break;
+        }
 
-  /**
-   * @param mixed $mesto
-   * @return OrozjeItem
-   */
-  public function setMesto($mesto) {
-    $this->mesto = $mesto;
-    return $this;
-  }
+        $tor->setProizvajalec($this->getProizvajalec());
+        $tor->setLetoIzdelave($this->getLetoIzdelave());
+        $tor->setDrzavaProizvajalka($this->getDrzavaProizvajalka());
+        $tor->setDatumPrejemaOrozja($this->getDate());
+        $tor->setStevilkaDobavnice($this->getStevilkaPrevzema());
+        $tor->setOpomba($this->getOpombaTor());
 
-  /**
-   * @return mixed
-   */
-  public function getVrstaKupca() {
-    return $this->vrstaKupca;
-  }
+        $error = $tor->confirmPage(164, 169);
 
-  /**
-   * @param mixed $vrstaKupca
-   * @return OrozjeItem
-   */
-  public function setVrstaKupca($vrstaKupca) {
-    $this->vrstaKupca = $vrstaKupca;
-    return $this;
-  }
+        if ($error !== null) {
+            // We have an error.
+            $this->returnMessage = $error;
+            $this->error = true;
+        } else {
+            // All good.
+            $this->returnMessage = "Nabavljeno";
+        }
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getVrstaDovoljenja() {
-    return $this->vrstaDovoljenja;
-  }
+    public function nabaviIstiModel(TorNabavljenoOrozje $tor)
+    {
+        try {
+            $tor->clickById("to22DoneDialogForm:j_idt232");
+            sleep(1);
+        } catch (\Exception $e) {
+            $this->returnMessage = "Ne morem klikniti gumba za dodajanje istega modela!";
+            $this->error = true;
+            return;
+        }
 
-  /**
-   * @param mixed $vrstaDovoljenja
-   * @return OrozjeItem
-   */
-  public function setVrstaDovoljenja($vrstaDovoljenja) {
-    $this->vrstaDovoljenja = $vrstaDovoljenja;
-    return $this;
-  }
+        // TODO: Napaka v TORu. Ko klikneš, da želiš dodati še en kos za dobavitelja, se kategorija izgubi. Zato je treba izbrati napačno in še 1x pravo.
+        $tor->setKategorijaOrozja("A2 - Avtomatsko strelno orožje");
+        $tor->setKategorijaOrozja($this->getKategorija());
+        $tor->setTipVrstaOrozja($this->getVrstaOrozja());
 
-  /**
-   * @return mixed
-   */
-  public function getDavcna() {
-    return $this->davcna;
-  }
+        $tor->setTovarniskaStevilka($this->getSerijska());
+        $error = $tor->confirmPage(164, 169);
+        if ($error !== null) {
+            // We have an error.
+            $this->returnMessage = $error;
+            $this->error = true;
+        } else {
+            // All good.
+            $this->returnMessage = "Nabavljeno";
+        }
+    }
 
-  /**
-   * @param mixed $davcna
-   * @return OrozjeItem
-   */
-  public function setDavcna($davcna) {
-    $this->davcna = $davcna;
-    return $this;
-  }
+    public function fix(TorRealizacijaOrozja $tor)
+    {
+//        $error = $tor->openItemBySerial($this->getSerijska());
+//        if ($error !== null) {
+//            $this->returnMessage = $error;
+//            $this->error = true;
+//            return;
+//        }
+//
+//        if ($this->isEU) {
+//            if ($this->drzava == 'Slovenija') {
+//                $tor->setDrzavaProdaje('Slovenija');
+//                $tor->setKupecNazivPriimekIme($this->getIme());
+//            } else {
+//                $tor->setDrzavaProdaje('Transfer v EU');
+//                $tor->setKupecNazivPriimekIme($this->getIme());
+//                $tor->setDrzava($this->getDrzava());
+//            }
+//        } else {
+//            $tor->setDrzavaProdaje('Izvoz');
+//            $tor->setKupecNazivPriimekIme($this->getIme());
+//            $tor->setDrzava($this->getDrzava());
+//        }
+//
+//        $tor->setNaselje($this->getMesto());
+//        $tor->setUlica($this->getNaslov());
+//        $tor->setHst('/');
+//
+//        switch ($this->getVrstaDovoljenja()) {
+//            case 'brez':
+//                $tor->setVrstaDovoljenja('Drugo');
+//                $tor->setVrstaDovoljenjaDrugo('Listina ni potrebna');
+//                break;
+//            case 'iznos v EU':
+//                $tor->setVrstaDovoljenja('Dovoljenje za iznos orožja iz RS v EU');
+//                break;
+//            case 'izvoz izven EU':
+//                $tor->setVrstaDovoljenja('Dovoljenje za izvoz orožja');
+//                break;
+//            case 'nabavno dovoljenje':
+//                $tor->setVrstaDovoljenja('Dovoljenje za nabavo orožja');
+//                break;
+//            case 'priglasitev':
+//                $tor->setVrstaDovoljenja('Drugo');
+//                $tor->setVrstaDovoljenjaDrugo('Priglasitveni list');
+//                break;
+//        }
+//        if ($this->getVrstaDovoljenja() != 'brez') {
+//            $tor->setOrganIzdaje($this->getOrganIzdaje());
+//            $tor->setStevilkaListine($this->getStevilkaListine());
+//            $tor->setDatumIzdajeListine($this->getDatumIzdajeListine());
+//        }
+//        $tor->setDatumProdaje($this->date);
+//        $tor->setOpomba($this->getOpombaTor());
+//        $tor->setVrstaKupca($this->getIsPodjetje() ? 'Trgovec z orožjem' : 'Posameznik');
+//        $error = $tor->confirmPage();
+//        echo $error;
+//        if ($error !== null) {
+//            // We have an error
+//            $this->returnMessage = $error;
+//            $this->error = true;
+//        } else {
+//            // All good.
+//            $this->returnMessage = "Realizirano";
+//        }
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getOrganIzdaje() {
-    return $this->organIzdaje;
-  }
 
-  /**
-   * @param mixed $organIzdaje
-   * @return OrozjeItem
-   */
-  public function setOrganIzdaje($organIzdaje) {
-    $this->organIzdaje = $organIzdaje;
-    return $this;
-  }
+    /**
+     * @return mixed
+     */
+    public function getStPrigasitvenegaLista()
+    {
+        return $this->stPrigasitvenegaLista;
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getStevilkaListine() {
-    return $this->stevilkaListine;
-  }
+    /**
+     * @param mixed $stPrigasitvenegaLista
+     * @return OrozjeItem
+     */
+    public function setStPrigasitvenegaLista($stPrigasitvenegaLista)
+    {
+        $this->stPrigasitvenegaLista = $stPrigasitvenegaLista;
+        return $this;
+    }
 
-  /**
-   * @param mixed $stevilkaListine
-   * @return OrozjeItem
-   */
-  public function setStevilkaListine($stevilkaListine) {
-    $this->stevilkaListine = $stevilkaListine;
-    return $this;
-  }
+    /**
+     * @return mixed
+     */
+    public function getVrstaOrozja()
+    {
+        return $this->vrstaOrozja;
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getDatumIzdajeListine() {
-    return $this->datumIzdajeListine;
-  }
+    /**
+     * @param mixed $vrstaOrozja
+     * @return OrozjeItem
+     */
+    public function setVrstaOrozja($vrstaOrozja)
+    {
+        $this->vrstaOrozja = $vrstaOrozja;
+        return $this;
+    }
 
-  /**
-   * @param mixed $datumIzdajeListine
-   * @return OrozjeItem
-   */
-  public function setDatumIzdajeListine($datumIzdajeListine) {
-    $this->datumIzdajeListine = $datumIzdajeListine;
-    return $this;
-  }
+    /**
+     * @return mixed
+     */
+    public function getModel()
+    {
+        return $this->model;
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getStPrigasitvenegaLista() {
-    return $this->stPrigasitvenegaLista;
-  }
+    /**
+     * @param mixed $model
+     * @return OrozjeItem
+     */
+    public function setModel($model)
+    {
+        $this->model = $model;
+        return $this;
+    }
 
-  /**
-   * @param mixed $stPrigasitvenegaLista
-   * @return OrozjeItem
-   */
-  public function setStPrigasitvenegaLista($stPrigasitvenegaLista) {
-    $this->stPrigasitvenegaLista = $stPrigasitvenegaLista;
-    return $this;
-  }
+    /**
+     * @return mixed
+     */
+    public function getSerijska()
+    {
+        return $this->serijska;
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getVrstaOrozja() {
-    return $this->vrstaOrozja;
-  }
+    /**
+     * @param mixed $serijska
+     * @return OrozjeItem
+     */
+    public function setSerijska($serijska)
+    {
+        $this->serijska = $serijska;
+        return $this;
+    }
 
-  /**
-   * @param mixed $vrstaOrozja
-   * @return OrozjeItem
-   */
-  public function setVrstaOrozja($vrstaOrozja) {
-    $this->vrstaOrozja = $vrstaOrozja;
-    return $this;
-  }
 
-  /**
-   * @return mixed
-   */
-  public function getProizvajalec() {
-    return $this->proizvajalec;
-  }
+    /**
+     * @return mixed
+     */
+    public function getKategorija()
+    {
+        return $this->kategorija;
+    }
 
-  /**
-   * @param mixed $proizvajalec
-   * @return OrozjeItem
-   */
-  public function setProizvajalec($proizvajalec) {
-    $this->proizvajalec = $proizvajalec;
-    return $this;
-  }
+    /**
+     * @param mixed $kategorija
+     * @return OrozjeItem
+     */
+    public function setKategorija($kategorija)
+    {
+        $this->kategorija = $kategorija;
+        return $this;
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getModel() {
-    return $this->model;
-  }
+    /**
+     * @return \Google\Spreadsheet\ListEntry
+     */
+    public function getSpreadsheetEntry()
+    {
+        return $this->spreadsheetEntry;
+    }
 
-  /**
-   * @param mixed $model
-   * @return OrozjeItem
-   */
-  public function setModel($model) {
-    $this->model = $model;
-    return $this;
-  }
+    /**
+     * @return bool
+     */
+    public function isIzdelan(): bool
+    {
+        return $this->izdelan;
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getCal() {
-    return $this->cal;
-  }
+    /**
+     * @param bool $izdelan
+     * @return OrozjeItem
+     */
+    public function setIzdelan(bool $izdelan): OrozjeItem
+    {
+        $this->izdelan = $izdelan;
+        return $this;
+    }
 
-  /**
-   * @param mixed $cal
-   * @return OrozjeItem
-   */
-  public function setCal($cal) {
-    $this->cal = $cal;
-    return $this;
-  }
+    /**
+     * @return mixed
+     */
+    public function getOrozjeDelOrozja()
+    {
+        return $this->orozjeDelOrozja;
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getSerijska() {
-    return $this->serijska;
-  }
+    /**
+     * @param mixed $orozjeDelOrozja
+     * @return OrozjeItem
+     */
+    public function setOrozjeDelOrozja($orozjeDelOrozja)
+    {
+        $this->orozjeDelOrozja = $orozjeDelOrozja;
+        return $this;
+    }
 
-  /**
-   * @param mixed $serijska
-   * @return OrozjeItem
-   */
-  public function setSerijska($serijska) {
-    $this->serijska = $serijska;
-    return $this;
-  }
+    /**
+     * @return mixed
+     */
+    public function getLetoIzdelave()
+    {
+        return $this->letoIzdelave;
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getRealiziranTor() {
-    return $this->realiziranTor;
-  }
-
-  /**
-   * @param mixed $realiziranTor
-   * @return OrozjeItem
-   */
-  public function setRealiziranTor($realiziranTor) {
-    $this->realiziranTor = $realiziranTor;
-    return $this;
-  }
-
-  /**
-   * @return mixed
-   */
-  public function getDrzava() {
-    return $this->drzava;
-  }
-
-  /**
-   * @param mixed $drzava
-   * @return OrozjeItem
-   */
-  public function setDrzava($drzava) {
-    $this->drzava = $drzava;
-    return $this;
-  }
-
-  /**
-   * @return mixed
-   */
-  public function getIsEU() {
-    return $this->isEU;
-  }
-
-  /**
-   * @param mixed $isEU
-   * @return OrozjeItem
-   */
-  public function setIsEU($isEU) {
-    $this->isEU = $isEU;
-    return $this;
-  }
-
-  /**
-   * @return mixed
-   */
-  public function getOpombaTor() {
-    return $this->opombaTor;
-  }
-
-  /**
-   * @param mixed $opombaTor
-   * @return OrozjeItem
-   */
-  public function setOpombaTor($opombaTor) {
-    $this->opombaTor = $opombaTor;
-    return $this;
-  }
-
-  /**
-   * @return mixed
-   */
-  public function getKategorija() {
-    return $this->kategorija;
-  }
-
-  /**
-   * @param mixed $kategorija
-   * @return OrozjeItem
-   */
-  public function setKategorija($kategorija) {
-    $this->kategorija = $kategorija;
-    return $this;
-  }
-
-  /**
-   * @return \Google\Spreadsheet\ListEntry
-   */
-  public function getSpreadsheetEntry() {
-    return $this->spreadsheetEntry;
-  }
-
-  /**
-   * @param array $spreadsheetEntry
-   * @return OrozjeItem
-   */
-  public function setSpreadsheetEntry(array $spreadsheetEntry) {
-    $this->spreadsheetEntry = $spreadsheetEntry;
-    return $this;
-  }
-
-  /**
-   * @return mixed
-   */
-  public function getIsPodjetje() {
-    return $this->isPodjetje;
-  }
-
-  /**
-   * @param mixed $isPodjetje
-   * @return OrozjeItem
-   */
-  public function setIsPodjetje($isPodjetje) {
-    $this->isPodjetje = $isPodjetje;
-    return $this;
-  }
-
-  /**
-   * @return mixed
-   */
-  public function getReturnMessage() {
-    return $this->returnMessage;
-  }
-
-  /**
-   * @return bool
-   */
-  public function isError(): bool {
-    return $this->error;
-  }
-
-  /**
-   * @return bool
-   */
-  public function isIzdelan(): bool {
-    return $this->izdelan;
-  }
-
-  /**
-   * @param bool $izdelan
-   * @return OrozjeItem
-   */
-  public function setIzdelan(bool $izdelan): OrozjeItem {
-    $this->izdelan = $izdelan;
-    return $this;
-  }
-
-  /**
-   * @return mixed
-   */
-  public function getOrozjeDelOrozja() {
-    return $this->orozjeDelOrozja;
-  }
-
-  /**
-   * @param mixed $orozjeDelOrozja
-   * @return OrozjeItem
-   */
-  public function setOrozjeDelOrozja($orozjeDelOrozja) {
-    $this->orozjeDelOrozja = $orozjeDelOrozja;
-    return $this;
-  }
-
+    /**
+     * @param mixed $letoIzdelave
+     */
+    public function setLetoIzdelave($letoIzdelave): void
+    {
+        $this->letoIzdelave = $letoIzdelave;
+    }
 
 }

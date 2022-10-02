@@ -45,7 +45,7 @@ class TorIzdelanoOrozje extends TorProxy {
    */
   public function setDatumIzdelave($datumIzdelave) {
     $this->datumIzdelave = $this->transformDate($datumIzdelave);
-    $this->writeById('FM:vno_dtm_dog', $this->datumIzdelave);
+    $this->writeById('contentForm:vno_dtm_dog_input', $this->datumIzdelave);
     return $this;
   }
 
@@ -56,7 +56,7 @@ class TorIzdelanoOrozje extends TorProxy {
     return $this->datumIzdelave;
   }
   public function setOpomba($opomba) {
-    $this->writeById('FM:vno_opombe', $opomba);
+    $this->writeById('contentForm:vno_opombe', $opomba);
     return $this;
   }
 

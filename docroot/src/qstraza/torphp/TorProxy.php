@@ -14,410 +14,422 @@ use Facebook\WebDriver\Firefox\FirefoxDriver;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\WebDriverExpectedCondition;
 use Facebook\WebDriver\WebDriverSelect;
+use qstraza\torphp\Data\OrozjeItem;
+use qstraza\torphp\Data\User;
+use qstraza\torphp\Realizacija\TorRealizacija;
 
-class TorProxy {
-  private $url = 'https://etor.mnz.gov.si';
-  private $seleniumHost = 'http://selenium:4444/wd/hub';
-  private $orozjeDelOrozja;
-  private $kategorijaOrozja;
-  private $tipVrstaOrozja;
-  private $znamka;
-  private $kaliber;
-  private $opomba;
-  private $model;
-  private $tovarniskaStevilka;
-  private $clientName;
-  /** @var  \Facebook\WebDriver\Remote\RemoteWebDriver */
-  private $seleniumDriver;
-  /**
-   * TorProxy constructor.
-   */
-  public function __construct($clientName) {
-    $this->clientName = $clientName;
-    $this->initBrowser();
-  }
+class TorProxy
+{
+    private $url = 'https://etor.mnz.gov.si';
+    private $seleniumHost = 'http://selenium:4444/wd/hub';
+    private $orozjeDelOrozja;
+    private $kategorijaOrozja;
+    private $tipVrstaOrozja;
+    private $znamka;
+    private $kaliber;
+    private $opomba;
+    private $model;
+    private $tovarniskaStevilka;
+    private $clientName;
+    /** @var  \Facebook\WebDriver\Remote\RemoteWebDriver */
+    private $seleniumDriver;
 
-  protected function initBrowser() {
-    $capabilities = DesiredCapabilities::firefox();
-    $capabilities->setCapability(FirefoxDriver::PROFILE, base64_encode(file_get_contents('/root/.mozilla/firefox/' . $this->clientName . '.zip')));
-    $driver = RemoteWebDriver::create($this->seleniumHost, $capabilities);
-    $driver->manage()->timeouts()->implicitlyWait(10);
-    $driver->manage()->window()->maximize();
-    $this->seleniumDriver = $driver;
-    $this->goHome();
-    if (strpos($this->seleniumDriver->getPageSource(), 'Potekla vam je seja ali ste bili prisiljeno odjavljeni iz aplikacije') !== false) {
-      $this->seleniumDriver->close();
-      $this->initBrowser();
+    /**
+     * TorProxy constructor.
+     */
+    public function __construct($clientName)
+    {
+        $this->clientName = $clientName;
+        $this->initBrowser();
     }
-  }
-  private function goHome() {
-    $this->seleniumDriver->get($this->url);
-    try{
-      if ($link = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('div.errorDetail a'))) {
-        if ($link->getText() == 'Prisilna odjava uporabnika') {
-          $link->click();
-          return $this->goHome();
+
+    protected function initBrowser()
+    {
+        $capabilities = DesiredCapabilities::firefox();
+        $capabilities->setCapability(FirefoxDriver::PROFILE, base64_encode(file_get_contents('/root/.mozilla/firefox/' . $this->clientName . '.zip')));
+        $driver = RemoteWebDriver::create($this->seleniumHost, $capabilities);
+        $driver->manage()->timeouts()->implicitlyWait(10);
+        $driver->manage()->window()->maximize();
+        $this->seleniumDriver = $driver;
+        $this->goHome();
+        if (strpos($this->seleniumDriver->getPageSource(), 'Potekla vam je seja ali ste bili prisiljeno odjavljeni iz aplikacije') !== false) {
+            $this->seleniumDriver->close();
+            $this->initBrowser();
         }
-      }
     }
-    catch(\Exception $e) {}
-  }
-  /**
-   * @return \Facebook\WebDriver\Remote\RemoteWebDriver
-   */
-  public function getSeleniumDriver() {
-    return $this->seleniumDriver;
-  }
 
-  /**
-   * @param \Facebook\WebDriver\Remote\RemoteWebDriver $seleniumDriver
-   * @return TorProxy
-   */
-  public function setSeleniumDriver(RemoteWebDriver $seleniumDriver): TorProxy {
-    $this->seleniumDriver = $seleniumDriver;
-    return $this;
-  }
-
-  /**
-   * @return string
-   */
-  public function getUrl(): string {
-    return $this->url;
-  }
-
-  /**
-   * @param string $url
-   * @return TorProxy
-   */
-  public function setUrl(string $url): TorProxy {
-    $this->url = $url;
-    return $this;
-  }
-
-  /**
-   * @return mixed
-   */
-  public function getOrozjeDelOrozja() {
-    return $this->orozjeDelOrozja;
-  }
-
-  /**
-   * @param $orozjeDelOrozja
-   * @return $this
-   * @throws \Exception
-   */
-  public function setOrozjeDelOrozja($orozjeDelOrozja) {
-    // To get valid options, execute following jQuery onpage
-    // var output = "";jQuery("select[id$=vno_w60_id_orozja_dela] option").each(function() {var name = /[\d+] - (.*)/.exec(jQuery(this).text());output+= "'" + name[1] + "' => '" + jQuery(this).val() + "',\n"}); console.log(output)
-    $validOptions = [
-      'Orožje' => '1',
-      'Menjalna cev' => '2',
-      'Vložna cev' => '3',
-      'Zaklep' => '4',
-      'Zaklepišče' => '5',
-      'Ležišče naboja s cevjo' => '6',
-      'Boben z ležišči naboja' => '7',
-    ];
-
-    if (isset($validOptions[$orozjeDelOrozja])) {
-      $this->orozjeDelOrozja = $validOptions[$orozjeDelOrozja];
-      $this->selectOption('FM:vno_w60_id_orozja_dela', $this->orozjeDelOrozja);
-      return $this;
+    private function goHome()
+    {
+        $this->seleniumDriver->get($this->url);
+        try {
+            if ($link = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('div.errorDetail a'))) {
+                if ($link->getText() == 'Prisilna odjava uporabnika') {
+                    $link->click();
+                    return $this->goHome();
+                }
+            }
+        } catch (\Exception $e) {
+        }
     }
-    throw new \Exception('Orožje / del orožja "' . $orozjeDelOrozja . '", ni pravilna!');
-  }
 
-  /**
-   * @return mixed
-   */
-  public function getKategorijaOrozja() {
-    return $this->kategorijaOrozja;
-  }
+    /**
+     * @return \Facebook\WebDriver\Remote\RemoteWebDriver
+     */
+    public function getSeleniumDriver()
+    {
+        return $this->seleniumDriver;
+    }
 
-  /**
-   * @param mixed $kategorijaOrozja
-   * @return TorProxy
-   */
-  public function setKategorijaOrozja($kategorijaOrozja) {
-    // To get valid options, execute following jQuery onpage
-    // var output = "";jQuery("select[id$=ui_w05_kategorija_orozja] option").each(function() {output+= "'" + jQuery(this).val() + "', "}); console.log(output)
-    $validOptions = [
-      'A-A2', 'A-A6', 'A-A6a', 'A-A7a', 'A-A7b', 'A-A8a', 'A-A9', 'A-A10',
-      'B-B1', 'B-B2', 'B-B3', 'B-B4', 'B-B5b', 'B-B6b', 'B-B7b', 'B-B8', 'B-B9',
-      'C-C1', 'C-C2', 'C-C3', 'C-C4', 'C-C5', 'C-C6', 'C-C7',
-      'D-D2', 'D-D3', 'D-D4', 'D-D5d', 'D-D6', 'D-D7', 'D-D8', 'D-D9', '9-99',
-    ];
-    if (in_array($kategorijaOrozja[0], ['A', 'B', 'C', 'D', '99'])) {
-      $kategorijaOrozja = $kategorijaOrozja[0] . '-' . $kategorijaOrozja;
-      if (in_array($kategorijaOrozja, $validOptions)) {
-        $this->kategorijaOrozja = $kategorijaOrozja;
-        $this->selectOption('FM:ui_w05_kategorija_orozja', $this->kategorijaOrozja);
+    /**
+     * @param \Facebook\WebDriver\Remote\RemoteWebDriver $seleniumDriver
+     * @return TorProxy
+     */
+    public function setSeleniumDriver(RemoteWebDriver $seleniumDriver): TorProxy
+    {
+        $this->seleniumDriver = $seleniumDriver;
         return $this;
-      }
     }
-    throw new \Exception('Kategorija orozja "' . $kategorijaOrozja . '", ni pravilna!');
-  }
 
-  /**
-   * @return mixed
-   */
-  public function getTipVrstaOrozja() {
-    return $this->tipVrstaOrozja;
-  }
-
-  /**
-   * @param mixed $tipVrstaOrozja
-   * @return TorProxy
-   */
-  public function setTipVrstaOrozja($tipVrstaOrozja) {
-    // To get valid options, execute following jQuery onpage
-    // var output = "";jQuery("select[id$=ui_w01_vrsta_orozja] option").each(function() {var name = /[\d+] - (.*)/.exec(jQuery(this).text());output+= "'" + name[1] + "' => '" + jQuery(this).val() + "',\n"}); console.log(output)
-    $validOptions = [
-      'Polavtomatska pištola' => '1-001',
-      'Pištola' => '1-002',
-      'Revolver' => '1-003',
-      'PAP z risano cevjo' => '1-004',
-      'PAP z gladko cevjo' => '1-005',
-      'RP z risano cevjo' => '1-006',
-      'RP z gladko cevjo' => '1-007',
-      'Puška z risano cevjo' => '1-008',
-      'Puška z gladko cevjo' => '1-009',
-      'Kombinirana puška' => '1-010',
-      'Puška' => '1-011',
-      'Avtomatska pištola' => '1-012',
-      'Mitraljez' => '1-013',
-      'Puškomitraljez' => '1-014',
-      'AP z risano cevjo' => '1-015',
-      'AP z gladko cevjo' => '1-016',
-      'Brzostrelka' => '1-017',
-      'Možnar cevni' => '1-018',
-      'Ostalo' => '1-019',
-      'Lok' => '1-020',
-      'Samostrel' => '1-021',
-      'Boksar' => '1-022',
-      'Bodalo' => '1-023',
-      'Bajonet' => '1-024',
-      'Buzdovan' => '1-025',
-      'Električni paralizator - šoker' => '1-064',
-      'Razpršilec - sprej' => '1-065',
-      'Vložna cev' => '2-001',
-      'Menjalna cev' => '2-002',
-      'Vrtljivi boben' => '2-003',
-      'Vse vrste streliva' => '3-001',
-    ];
-    if (isset($validOptions[$tipVrstaOrozja])) {
-      $this->tipVrstaOrozja = $validOptions[$tipVrstaOrozja];
-      $this->selectOption('FM:ui_w01_vrsta_orozja', $this->tipVrstaOrozja);
-      return $this;
+    /**
+     * @return string
+     */
+    public function getUrl(): string
+    {
+        return $this->url;
     }
-    throw new \Exception('Vrsta orozja "' . $tipVrstaOrozja . '", ni pravilna!');
-  }
 
-  /**
-   * @return mixed
-   */
-  public function getZnamka() {
-    return $this->znamka;
-  }
+    /**
+     * @param string $url
+     * @return TorProxy
+     */
+    public function setUrl(string $url): TorProxy
+    {
+        $this->url = $url;
+        return $this;
+    }
 
-  /**
-   * @param mixed $znamka
-   * @return TorProxy
-   */
-  public function setZnamka($znamka) {
-    $this->znamka = $znamka;
-    $this->writeById('FM:vno_znamka', $this->znamka);
-    return $this;
-  }
+    /**
+     * @return mixed
+     */
+    public function getOrozjeDelOrozja()
+    {
+        return $this->orozjeDelOrozja;
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getKaliber() {
-    return $this->kaliber;
-  }
+    /**
+     * @param $orozjeDelOrozja
+     * @return $this
+     * @throws \Exception
+     */
+    public function setOrozjeDelOrozja($orozjeDelOrozja)
+    {
+        $orozjeDelOrozjaCode = substr(trim($orozjeDelOrozja), 0, 1);
 
-  /**
-   * @param mixed $kaliber
-   * @return TorProxy
-   */
-  public function setKaliber($kaliber) {
-    $this->kaliber = $kaliber;
-    $this->writeById('FM:vno_kaliber', $this->kaliber);
-    return $this;
-  }
+        $this->clickById("contentForm:vno_w60_id_orozja_dela");
+        sleep(0.2);
 
-  /**
-   * @return mixed
-   */
-  public function getOpomba() {
-    return $this->opomba;
-  }
+        $options = $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector('#contentForm\:vno_w60_id_orozja_dela_items li'));
+        foreach ($options as $option) {
+            $optionText = substr(trim($option->getText()), 0, 1);
+            if ($optionText == $orozjeDelOrozjaCode) {
+                $this->clickById($option->getAttribute("id"));
+                return $this;
+            }
+        }
 
-  /**
-   * @param mixed $opomba
-   * @return TorProxy
-   */
-  public function setOpomba($opomba) {
-    $this->opomba = $opomba;
-    return $this;
-  }
+        throw new \Exception("Orožje / del orožja je napačen: {$orozjeDelOrozja}");
 
-  /**
-   * @return mixed
-   */
-  public function getModel() {
-    return $this->model;
-  }
+    }
 
-  /**
-   * @param mixed $model
-   * @return TorProxy
-   */
-  public function setModel($model) {
-    $this->model = $model;
-    $this->writeById('FM:vno_model', $this->model);
-    return $this;
-  }
+    /**
+     * @return mixed
+     */
+    public function getKategorijaOrozja()
+    {
+        return $this->kategorijaOrozja;
+    }
 
-  /**
-   * @return mixed
-   */
-  public function getTovarniskaStevilka() {
-    return $this->tovarniskaStevilka;
-  }
+    /**
+     * @param mixed $kategorijaOrozja
+     * @param $validOptions
+     * @return TorProxy
+     * @throws \Exception
+     */
+    public function setKategorijaOrozja($kategorijaOrozja)
+    {
+        $kategorijaOrozjaCode = explode(" ", trim($kategorijaOrozja), 2);
+        $kategorijaOrozjaCode = $kategorijaOrozjaCode[0];
 
-  /**
-   * @param mixed $tovarniskaStevilka
-   * @return TorProxy
-   */
-  public function setTovarniskaStevilka($tovarniskaStevilka) {
-    $this->tovarniskaStevilka = $tovarniskaStevilka;
-    $this->writeById('FM:vno_tov_stevilka', $this->tovarniskaStevilka);
-    return $this;
-  }
+        $this->clickById("contentForm:ui_w05_kategorija_orozja");
+        sleep(0.2);
 
-  private function changeFrame($frameName) {
-    $this->seleniumDriver->switchTo()->defaultContent();
-    $this->seleniumDriver->wait(2, 50)->until(
-      WebDriverExpectedCondition::frameToBeAvailableAndSwitchToIt($frameName)
-    );
+        $options = $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector('#contentForm\\:ui_w05_kategorija_orozja_items li'));
+        foreach ($options as $option) {
+            $optionText = explode(" ", trim($option->getText()), 2);
+            $optionText = $optionText[0];
+
+            if ($optionText == $kategorijaOrozjaCode) {
+                $this->clickById($option->getAttribute(("id")));
+                return $this;
+            }
+        }
+        throw new \Exception("Kategorija orožja je napačna: {$kategorijaOrozja}");
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTipVrstaOrozja()
+    {
+        return $this->tipVrstaOrozja;
+    }
+
+    /**
+     * @param mixed $tipVrstaOrozja
+     * @return TorProxy
+     */
+    public function setTipVrstaOrozja($tipVrstaOrozja)
+    {
+        $tipVrstaOrozjaCode = substr(trim($tipVrstaOrozja), 0, 3);
+
+        $this->clickById("contentForm:ui_w01_vrsta_orozja");
+        sleep(0.2);
+
+        $options = $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector('#contentForm\\:ui_w01_vrsta_orozja_items li'));
+        foreach ($options as $option) {
+            $optionText = substr(trim($option->getText()), 0, 3);
+            if ($optionText == $tipVrstaOrozjaCode) {
+                $this->clickById($option->getAttribute("id"));
+                return $this;
+            }
+        }
+
+        throw new \Exception("Tip/Vrsta orožja je napačna: {$tipVrstaOrozja}");
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getZnamka()
+    {
+        return $this->znamka;
+    }
+
+    /**
+     * @param mixed $znamka
+     * @return TorProxy
+     */
+    public function setZnamka($znamka)
+    {
+        $this->znamka = $znamka;
+        $this->writeById('contentForm:vno_znamka', $this->znamka);
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getKaliber()
+    {
+        return $this->kaliber;
+    }
+
+    /**
+     * @param mixed $kaliber
+     * @return TorProxy
+     */
+    public function setKaliber($kaliber)
+    {
+        $this->kaliber = $kaliber;
+        $this->writeById('contentForm:vno_kaliber', $this->kaliber);
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getOpomba()
+    {
+        return $this->opomba;
+    }
+
+    /**
+     * @param mixed $opomba
+     * @return TorProxy
+     */
+    public function setOpomba($opomba)
+    {
+        $this->opomba = $opomba;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getModel()
+    {
+        return $this->model;
+    }
+
+    /**
+     * @param mixed $model
+     * @return TorProxy
+     */
+    public function setModel($model)
+    {
+        $this->model = $model;
+        $this->writeById('contentForm:vno_model', $this->model);
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTovarniskaStevilka()
+    {
+        return $this->tovarniskaStevilka;
+    }
+
+    /**
+     * @param mixed $tovarniskaStevilka
+     * @return TorProxy
+     */
+    public function setTovarniskaStevilka($tovarniskaStevilka)
+    {
+        $this->tovarniskaStevilka = $tovarniskaStevilka;
+        $this->writeById('contentForm:vno_tov_stevilka', $this->tovarniskaStevilka);
+        return $this;
+    }
+
+    private function changeFrame($frameName)
+    {
+        return;
+        $this->seleniumDriver->switchTo()->defaultContent();
+        $this->seleniumDriver->wait(2, 50)->until(
+            WebDriverExpectedCondition::frameToBeAvailableAndSwitchToIt($frameName)
+        );
 //    $frame = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('frame[name=' . $frameName . ']'));
 //    $this->seleniumDriver->switchTo()->frame($frame);
-  }
-
-  protected function changeToWorkingFrame() {
-    $this->changeFrame('workingScreen');
-  }
-
-  private function changeToMenuFrame() {
-    $this->changeFrame('menuLevel1');
-  }
-
-  /**
-   * Clicks on a menu item.
-   *
-   * @param $code
-   *   Defines which menu item to click. Check the code for possible values.
-   * @throws \Exception
-   */
-  public function menuClick($code) {
-    $validOptions = [
-      'TO20' => 'FM:menu_item_to_20', // Izdelano orožje
-      'TO21' => 'FM:menu_item_to_21', // Popravljeno, predelano in spremenljeno orožje
-      'TO22' => 'FM:menu_item_to_22', // Nabavljeno, prodano orožje in priglasitveni listi
-      'TO23' => 'FM:menu_item_to_21', // Nabavljeno in prodano strelivo
-      'TO24' => 'FM:menu_item_to_24', // Skladiščenje in hramba orožja
-      'TO10' => 'FM:menu_item_to_10', // Iskanje orožja in streliva
-      'TO50' => 'FM:menu_item_to_50', // Pregled kupcev / dobaviteljev
-    ];
-    if (!isset($validOptions[$code])) {
-      throw new \Exception('Koda za meni "' . $code . '", ni pravilna!');
     }
-    $id = $validOptions[$code];
-    $this->changeToMenuFrame();
-//    $this->seleniumDriver->wait(10, 1000)->until(
-//      WebDriverExpectedCondition::elementToBeClickable(WebDriverBy::id($id))
-//    );
-    $this->seleniumDriver->findElement(WebDriverBy::id($id))->click();
-    $this->changeToWorkingFrame();
-  }
 
-  protected function selectOption($id, $val) {
-    $element = $this->seleniumDriver->wait(3, 100)->until(
-      WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($id))
-    );
-    $select = new WebDriverSelect($element);
-    $select->selectByValue($val);
-  }
-  /**
-   * @param $id
-   * @return \Facebook\WebDriver\Remote\RemoteWebElement
-   */
-  protected function clickById($id) {
-    return $this->getElementById($id)->click();
-  }
-  protected function writeById($id, $value) {
-    return $this->clickById($id)
-      ->sendKeys($value);
-  }
+    protected function changeToWorkingFrame()
+    {
+        $this->changeFrame('workingScreen');
+    }
 
-  protected function getElementById($id) {
-    $element = $this->seleniumDriver->wait(3, 100)->until(
-      WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($id))
-    );
-    $element->getLocationOnScreenOnceScrolledIntoView();
-    return $element;
-  }
+    private function changeToMenuFrame()
+    {
+        $this->changeFrame('menuLevel1');
+    }
 
-  protected function getElementByCssSelector($selector) {
-    return $this->getSeleniumDriver()->findElement(WebDriverBy::cssSelector($selector));
-  }
+    /**
+     * Clicks on a menu item.
+     *
+     * @param $code
+     *   Defines which menu item to click. Check the code for possible values.
+     * @throws \Exception
+     */
+    public function menuClick($code)
+    {
+        $validOptions = [
+            'izdelano orozje' => 20, // Izdelano orožje
+            'popravljeno oroje' => 21, // Popravljeno, predelano in spremenljeno orožje
+            'nabavljeno prodano orozje' => 22, // Nabavljeno, prodano orožje in priglasitveni listi
+            'nabavljeno prodano strelivo' => 23, // Nabavljeno in prodano strelivo
+            'hramba' => 24, // Skladiščenje in hramba orožja
+            'izdelano strelivo' => 26, // Izdelano strelivo
+            'iskanje' => 10, // Iskanje orožja in streliva
+            'sifrant' => 50, // Šifrant kupcev / dobaviteljev
+        ];
+        if (!isset($validOptions[$code])) {
+            throw new \Exception("Koda za meni {$code}, ni pravilna!");
+        }
+        $suffix = "create";
+//        if ($validOptions[$code] == 10 or $validOptions[$code] == 50) {
+//            $suffix = "index";
+//        }
+        if ($validOptions[$code] == 10) {
+            $this->executeJS("PrimeFaces.addSubmitParam('headerForm',{'headerForm:j_idt31':'headerForm:j_idt31'}).submit('headerForm');");
+        }
+        else {
+            $this->seleniumDriver->get("https://etor.mnz.gov.si/tor/to{$validOptions[$code]}/{$suffix}.xhtml");
+        }
+        sleep(2);
+        return;
+    }
 
-  protected function waitUntilElement($elementId) {
-    return $this->getSeleniumDriver()->wait()->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($elementId)));
-  }
+    protected function selectOption($id, $val)
+    {
+        $element = $this->seleniumDriver->wait(3, 100)->until(
+            WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($id))
+        );
+        $select = new WebDriverSelect($element);
+        $select->selectByValue($val);
+    }
 
-  public function logOut() {
-    $this->changeFrame('header');
-    $this->clickById('TOR:logoff_link');
-    return $this->seleniumDriver->close();
-  }
+    /**
+     * @param $id
+     * @return \Facebook\WebDriver\Remote\RemoteWebElement
+     */
+    public function clickById($id)
+    {
+        return $this->getElementById($id)->click();
+    }
 
-  protected function getErrorStatus() {
-    $this->changeToWorkingFrame();
+    protected function writeById($id, $value)
+    {
+        return $this->clickById($id)
+            ->sendKeys($value);
+    }
 
-    try {
+    protected function getElementById($id)
+    {
+        $element = $this->seleniumDriver->wait(3, 100)->until(
+            WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($id))
+        );
+//    $element->getLocationOnScreenOnceScrolledIntoView();
+        return $element;
+    }
+
+    protected function getElementByCssSelector($selector)
+    {
+        return $this->getSeleniumDriver()->findElement(WebDriverBy::cssSelector($selector));
+    }
+
+    protected function waitUntilElement($elementId)
+    {
+        return $this->getSeleniumDriver()->wait()->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($elementId)));
+    }
+
+    protected function wait($cssSelector)
+    {
+        $this->seleniumDriver->wait(10, 500)->until(
+            WebDriverExpectedCondition::presenceOfElementLocated(
+                WebDriverBy::cssSelector($cssSelector)
+            )
+        );
+    }
+
+    public function logOut()
+    {
+        $this->executeJS("PrimeFaces.addSubmitParam('headerForm',{'headerForm:j_idt21':'headerForm:j_idt21'}).submit('headerForm');");
+
+//        $this->getElementByCssSelector('.tor-user-dropdown')->click();
+//        $this->clickById(('headerForm:j_idt21'));
+        return $this->seleniumDriver->close();
+    }
+
+    public function getErrorStatus()
+    {
+//    $this->changeToWorkingFrame();
+
+        try {
 //      /** @var \Facebook\WebDriver\Remote\RemoteWebElement $errorStatus */
 //      $errorStatus = $this->seleniumDriver->wait(1, 100)->until(
 //        WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('span.error-status'))
 //      );
-        $errorStatus = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('span.error-status'));
-    }
-    catch (\Exception $e) {
-      // No error, because no error-status element was found.
-      return null;
-    }
-//    if ($errorStatus = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('span.error-status'))) {
-    if ($errorStatus) {
-      if ($errorText = $errorStatus->getText()) {
-        return $errorText;
-      }
-    }
-    return null;
-  }
-
-    protected function getWarningStatus() {
-        $this->changeToWorkingFrame();
-
-        try {
-//            /** @var \Facebook\WebDriver\Remote\RemoteWebElement $errorStatus */
-//            $errorStatus = $this->seleniumDriver->wait(1, 100)->until(
-//                WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('span.warning-status'))
-//            );
-            $errorStatus = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('span.warning-status'));
-        }
-        catch (\Exception $e) {
+            $errorStatus = $this->seleniumDriver->findElement(WebDriverBy::id('contentForm:contentFormGrowl_container'));
+        } catch (\Exception $e) {
             // No error, because no error-status element was found.
             return null;
         }
@@ -430,64 +442,84 @@ class TorProxy {
         return null;
     }
 
-  /**
-   * @return mixed
-   */
-  public function getClientName() {
-    return $this->clientName;
-  }
+    protected function getWarningStatus()
+    {
+        $this->changeToWorkingFrame();
 
-  /**
-   * @param mixed $clientName
-   * @return TorProxy
-   */
-  public function setClientName($clientName) {
-    $this->clientName = $clientName;
-    return $this;
-  }
+        try {
+//            /** @var \Facebook\WebDriver\Remote\RemoteWebElement $errorStatus */
+//            $errorStatus = $this->seleniumDriver->wait(1, 100)->until(
+//                WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::cssSelector('span.warning-status'))
+//            );
+            $errorStatus = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('span.warning-status'));
+        } catch (\Exception $e) {
+            // No error, because no error-status element was found.
+            return null;
+        }
+//    if ($errorStatus = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('span.error-status'))) {
+        if ($errorStatus) {
+            if ($errorText = $errorStatus->getText()) {
+                return $errorText;
+            }
+        }
+        return null;
+    }
 
-  public function createTorIzdelanoOrozje() {
-    return new TorIzdelanoOrozje($this->clientName, $this->seleniumDriver);
-  }
+    /**
+     * @return mixed
+     */
+    public function getClientName()
+    {
+        return $this->clientName;
+    }
 
-  public function confirmPage() {
-    $this->changeToWorkingFrame();
-    $this->clickById('FM:PotrdiFooter');
-    sleep(2);
-    $this->changeToWorkingFrame();
-    $this->clickById('FM:potrdiButton');
-    sleep(2);
-    $this->changeToWorkingFrame();
-    // id = FM:naslov
-    // Podatki so bili uspe\u0161no shranjeni!
-      try {
-          $ok = $this->seleniumDriver->findElement(WebDriverBy::id('FM:naslov'));
-          if ($ok->getText() == 'Podatki so bili uspešno shranjeni!') {
-              return null;
-          }
-          else {
-              throw new \Exception();
-          }
-      }
-      catch (\Exception $e) {
-          $errorStatus = $this->getErrorStatus();
-          if ($errorStatus) {
-              return $errorStatus;
-          }
-          $warningStatus = $this->getWarningStatus();
-          if ($warningStatus) {
-              return $warningStatus;
-          }
-          return null;
-      }
+    /**
+     * @param mixed $clientName
+     * @return TorProxy
+     */
+    public function setClientName($clientName)
+    {
+        $this->clientName = $clientName;
+        return $this;
+    }
 
-  }
+    public function createTorIzdelanoOrozje()
+    {
+        return new TorIzdelanoOrozje($this->clientName, $this->seleniumDriver);
+    }
 
-  public function enableAllDisabledElements() {
-    $this->getSeleniumDriver()->wait(3, 100)->until(
-      WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id('FM:to22Read:vno_w60_id_orozja_dela'))
-    );
-    $this->getSeleniumDriver()->executeScript('
+    public function confirmPage($potrdiButtonId, $confirmButtonId)
+    {
+        $this->clickById('contentForm:j_idt' . $potrdiButtonId);
+        sleep(0.5);
+        $this->clickById('contentForm:j_idt' . $confirmButtonId);
+        sleep(2);
+        try {
+            $ok = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('.ui-dialog-titlebar span.ui-dialog-title'));
+            if ($ok->getText() == 'Podatki so bili uspešno shranjeni!') {
+                return null;
+            } else {
+                throw new \Exception();
+            }
+        } catch (\Exception $e) {
+            $errorStatus = $this->getErrorStatus();
+            if ($errorStatus) {
+                return $errorStatus;
+            }
+            $warningStatus = $this->getWarningStatus();
+            if ($warningStatus) {
+                return $warningStatus;
+            }
+            return null;
+        }
+    }
+
+    public function enableAllDisabledElements()
+    {
+        $this->getSeleniumDriver()->wait(3, 100)->until(
+            WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id('FM:to22Read:vno_w60_id_orozja_dela'))
+        );
+        $this->getSeleniumDriver()->executeScript('
       var selects = this.window.document.getElementsByTagName("select");
       var inputs = this.window.document.getElementsByTagName("input");
       for (var i=0;i<selects.length;i++) {selects[i].disabled="";}
@@ -495,32 +527,192 @@ class TorProxy {
       console.log("executed");
     ');
 
-    echo "executed   \n\n";
-  }
-  protected function enableElementById($id) {
+        echo "executed   \n\n";
+    }
+
+    protected function enableElementById($id)
+    {
 //    $this->getSeleniumDriver()->executeScript('console.log(window.frames,window.frames.length);');
-    return $this->getSeleniumDriver()->executeScript('this.window.document.getElementById("' . $id . '").disabled="";');
-  }
+        return $this->getSeleniumDriver()->executeScript('this.window.document.getElementById("' . $id . '").disabled="";');
+    }
 
-  protected function transformDate($date) {
-    $newDate = \DateTime::createFromFormat('j-M-Y', $date);
-    return $newDate->format('d.m.Y');
-  }
+    protected function transformDate($date)
+    {
+        if (!$date) {
+            throw new \Exception("Datum je napačen: " . $date);
+        }
+        try {
+//            $newDate = \DateTime::createFromFormat('j-M-Y', $date);
+            // Converting excel int timestamp to unix timestamp in seconds.
+            $date = ($date - 25569) * 86400;
+            $newDate = new \DateTime();
+            $newDate->setTimestamp($date);
+            return $newDate->format('d.m.Y');
+        }
+        catch (\Exception $e) {
+            throw new \Exception("Datum je napačen: " . $date);
+        }
 
-  public function goBack() {
-    return $this->getSeleniumDriver()->navigate()->back();
-  }
+    }
 
-  public function getModelFromPage() {
-      return $this->getElementById('FM:to22Read:vno_model')->getText();
-  }
+    public function goBack()
+    {
+        return $this->getSeleniumDriver()->navigate()->back();
+    }
 
-    public function getDobavnicaFromPage() {
+    public function getModelFromPage()
+    {
+        return $this->getElementById('FM:to22Read:vno_model')->getText();
+    }
+
+    public function getDobavnicaFromPage()
+    {
         return $this->getElementById('FM:to22Read:vno_stv_dobavnice')->getText();
     }
 
-  public function executeJS($js) {
-    $this->getSeleniumDriver()->executeScript($js);
-    return $this;
-  }
+    public function executeJS($js)
+    {
+        return $this->getSeleniumDriver()->executeScript($js);
+    }
+
+    private function createUser(User $user, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId) {
+        $this->clickById("kupecDialogForm:j_idt" . $dodajUserButtonId);
+        sleep(2);
+        $this->setVrstaKupca($user->getVrstaKupca());
+        $vrstaKupcaCode = substr($user->getVrstaKupca(), 0, 1);
+        sleep(1);
+        // "2 - Poslovni subjekt", "3 - Trgovec z orožjem"
+        if (in_array($vrstaKupcaCode, ["2", "3"])) {
+            $this->writeById("to50DialogForm:dik_ds_ms", $user->getDavcna());
+        }
+        $this->writeById("to50DialogForm:dik_subjekt", $user->getIme());
+        $this->writeById("to50DialogForm:dik_drzava", $user->getDrzava());
+        $this->writeById("to50DialogForm:dik_naselje", $user->getMesto());
+        $this->writeById("to50DialogForm:dik_ulica", $user->getNaslov());
+
+        $this->clickById("to50DialogForm:j_idt" . $potrdiAddingNewUserButtonId);
+        sleep(0.5);
+        $this->clickById("contentForm:j_idt" . $potrdiAddingNewUserConfirmButtonId);
+
+        if ($this->getErrorStatus()) {
+            throw new \Exception("Napaka pri dodajanju novega uporabnika {$user->getIme()}");
+        }
+        sleep(1);
+        return $this;
+    }
+    public function selectUser(User $user, $isciButtonId, $izberiUserButtonId, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId) {
+        // Write title to search.
+        $this->writeById("kupecDialogForm:kupec_dialog_rel_subjekt", $user->getIme());
+        // Click search button.
+        $this->clickById("kupecDialogForm:j_idt" . $isciButtonId);
+        sleep(2);
+        // If we do not have any hits, we need to create a new user.
+        if ($this->getElementById("kupecDialogForm:kupecDataTable_data")->getText() == 'Ni zapisov.') {
+            $this->createUser($user, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId);
+            return $this->selectUser($user, $isciButtonId, $izberiUserButtonId, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId);
+        } // We have hits.
+        else {
+            // Checking if we have only one hit.
+            if ($this->getElementByCssSelector('#kupecDialogForm\\:kupecDataTable_paginator_bottom .ui-paginator-current')->getText() == '1 - 1 od 1') {
+                $this->getElementByCssSelector('#kupecDialogForm\\:kupecDataTable_data td')->click();
+                $this->clickById('kupecDialogForm:j_idt' . $izberiUserButtonId);
+                // We have one hit - selecting it.
+                return $this;
+            } // We have multiple hits. We need to search by the street.
+            else {
+                // Selecting 50 hits per page.
+                $this->getSeleniumDriver()
+                    ->findElement(WebDriverBy::cssSelector('select[name="kupecDialogForm\\:kupecDataTable_rppDD"] option[value="50"]'))
+                    ->click();
+                sleep(1);
+                // Getting all hits in an array.
+                $elements = $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector('#kupecDialogForm\\:kupecDataTable_data tr'));
+
+                // Checking if any of the hits have the correct street name. If we find it, we select it.
+                foreach ($elements as $element) {
+                    if (strpos(strtolower($element->getText()), strtolower($user->getNaslov())) !== false) {
+                        $element->findElement(WebDriverBy::cssSelector("td"))->click();
+                        $this->clickById('kupecDialogForm:j_idt' . $izberiUserButtonId);
+                        return $this;
+                    }
+                }
+                $this->createUser($user, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId);
+                return $this->selectUser($user, $isciButtonId, $izberiUserButtonId, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId);
+//                throw new \Exception("Oseb/podjetij z nazivom {$orozjeItem->getIme()} in ulico {$orozjeItem->getNaslov()} ne najdem!");
+            }
+        }
+    }
+
+    /**
+     * @param mixed $vrstaKupca
+     * @return TorProxy
+     */
+    public function setVrstaKupca($vrstaKupca) {
+        $vrstaKupcaCode = substr(trim($vrstaKupca), 0, 1);
+
+        $this->clickById("to50DialogForm:dik_w64_id_vrste_subjekta");
+        sleep(0.2);
+
+        $options = $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector('#to50DialogForm\:dik_w64_id_vrste_subjekta_items li'));
+        foreach ($options as $option) {
+            $optionText = substr(trim($option->getText()), 0, 1);
+            if ($optionText == $vrstaKupcaCode) {
+                $this->clickById($option->getAttribute("id"));
+                return $this;
+            }
+        }
+
+        throw new \Exception("Vrsta kupca ni prava: {$vrstaKupca}");
+    }
+
+    /**
+     * @param mixed $vrstaDovoljenja
+     * @return TorRealizacija
+     */
+    public function setVrstaDovoljenja($vrstaDovoljenja, $vstaDovoljenjaBtnId1, $elementPrefix)
+    {
+        if (!$vrstaDovoljenja) {
+            throw new \Exception('Manjka podatek o vrsti dovoljenja');
+        }
+        $vrstaDovoljenjaCode = explode(" ", trim($vrstaDovoljenja), 2);
+        $vrstaDovoljenjaCode = $vrstaDovoljenjaCode[0];
+
+        $vstaDovoljenjaBtnId2 = 13;
+
+        $this->clickById($vstaDovoljenjaBtnId1);
+        sleep(0.2);
+        $vstaDovoljenjaBtnId1 = addcslashes($vstaDovoljenjaBtnId1, ":");
+        $options = $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector("#{$vstaDovoljenjaBtnId1}_items li"));
+        foreach ($options as $option) {
+            $optionText = explode(" ", trim($option->getText()), 2);
+            $optionText = $optionText[0];
+
+            if ($optionText == $vrstaDovoljenjaCode) {
+                $this->clickById($option->getAttribute("id"));
+                if ($vrstaDovoljenjaCode != "99") {
+                    return $this;
+                }
+            }
+            // We are at the last item, so we need to select it.
+            elseif($optionText == "99"){
+                $this->clickById($option->getAttribute("id"));
+            }
+        }
+
+        $this->clickById("contentForm:{$elementPrefix}_w{$vstaDovoljenjaBtnId2}_id_vrs_vlg_reg");
+        sleep(0.2);
+
+        $options = $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector("#contentForm\:{$elementPrefix}_w{$vstaDovoljenjaBtnId2}_id_vrs_vlg_reg_items li"));
+        foreach ($options as $option) {
+            $optionText = explode(" ", trim($option->getText()), 2);
+            $optionText = $optionText[0];
+
+            if ($optionText == $vrstaDovoljenjaCode) {
+                $this->clickById($option->getAttribute("id"));
+                return $this;
+            }
+        }
+
+        throw new \Exception('Vrsta dovoljenja "' . $vrstaDovoljenja . '", ni pravilna!');
+    }
 }
