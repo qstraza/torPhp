@@ -58,7 +58,64 @@ class StrelivoItem extends OrozjeStrelivoItem
         $tor->setStevilkaDobavnice($this->getStevilkaPrevzema());
         $tor->setOpomba($this->getOpombaTor());
 
-        $error = $tor->confirmPage(159, 164);
+        $error = $tor->confirmPage();
+
+        if ($error !== null) {
+            // We have an error.
+            $this->returnMessage = $error;
+            $this->error = true;
+        } else {
+            // All good.
+            $this->returnMessage = "Nabavljeno";
+        }
+    }
+
+    public function nabaviOdistegaDobavitelja(TorNabavljenoStrelivo $tor) {
+        try {
+            $buttonElement = $tor->getElementByCssSelector("#to23DoneDialogForm button:nth-child(2)");
+            if (!$buttonElement->isDisplayed()) {
+                return $this->nabavi($tor);
+            }
+            else {
+                $buttonElement->click();
+            }
+            sleep(1);
+        } catch (\Exception $e) {
+            $this->returnMessage = $e->getMessage();
+            $this->error = true;
+            return;
+        }
+        $strelivoDelStrelivaCode = substr($this->getTipVrstaStreliva(), 0, 1);
+        if ($strelivoDelStrelivaCode != $tor->getStrelivoDelStreliva()) {
+            $tor->setStrelivoDelStreliva($this->getStrelivoDelStreliva());
+        }
+        if ($tor->getVrstaStreliva() != $this->getTipVrstaStreliva()) {
+            $tor->setVrstaStreliva($this->getTipVrstaStreliva());
+        }
+        if ($tor->getZnamka() != $this->getZnamka()) {
+            $tor->setZnamka($this->getZnamka());
+        }
+        $tor->setKaliber($this->getCal());
+
+
+        // Če ni "2 - Smodnik izražen v kg"
+        if (substr($this->getStrelivoDelStreliva(), 0, 1) != "2") {
+            $tor->setKolicina((int)$this->getKolicina());
+        }
+        else { // če je "2 - Smodnik izražen v kg"
+            $tor->setKolicina($this->getKolicina());
+            $tor->setEnota("kg");
+        }
+        if ($tor->getProizvajalec() != $this->getProizvajalec()) {
+            $tor->setProizvajalec($this->getProizvajalec());
+        }
+        if ($tor->getDrzavaProizvajalka() != $this->getDrzavaProizvajalka()) {
+            $tor->setDrzavaProizvajalka($this->getDrzavaProizvajalka());
+        }
+
+        $tor->setOpomba($this->getOpombaTor());
+
+        $error = $tor->confirmPage();
 
         if ($error !== null) {
             // We have an error.
@@ -72,11 +129,11 @@ class StrelivoItem extends OrozjeStrelivoItem
 
     public function realiziraj(TorRealizacijaStreliva $tor)
     {
-        $potrdiButtonId = 221;
-        $confirmButtonId = 226;
+        $potrdiButtonSelector = "#main_content > div.card.main-frame > div > div:nth-child(4) > div.ui-toolbar.ui-widget.ui-widget-header.ui-corner-all > div > button:nth-child(3)";
+        $confirmButtonSelector = "#contentForm\\:confirmDialog > div.ui-dialog-buttonpane.ui-dialog-footer.ui-widget-content > button.ui-confirmdialog-yes";
 
         $this->setVrstaEvidence("4 - Nabavljeno in prodano strelivo");
-        $return = $tor->searchStrelivoDelStrelivaByName($this->getStrelivoDelStreliva(), $this->getProizvajalec(), 'Ne', $this->getVrstaEvidence());
+        $return = $tor->searchStrelivoDelStrelivaByNameCal($this->getCal(), $this->getStrelivoDelStreliva(), $this->getProizvajalec(), 'Ne', $this->getVrstaEvidence());
         if ($return) {
             $this->returnMessage = $return["error"];
             $this->error = true;
@@ -95,7 +152,7 @@ class StrelivoItem extends OrozjeStrelivoItem
             }
             $element->findElement(WebDriverBy::cssSelector("td"))->click();
             sleep(1);
-            $tor->clickById('contentForm:j_idt59');
+            $tor->getElementByCssSelector("#main_content > div.card.main-frame > div > div:nth-child(1) > div > div:nth-child(2) > div > button:nth-child(3)")->click();
             sleep(2);
 
             $errorStatus = $tor->getErrorStatus();
@@ -107,7 +164,7 @@ class StrelivoItem extends OrozjeStrelivoItem
 
             $tor->setDrzavaProdaje($this->getDrzava(), $this->getIsEU());
             try {
-                $izbiraZadnjegaKupcaElement = $tor->getSeleniumDriver()->findElement(WebDriverBy::cssSelector("#contentForm\:j_idt184"));
+                $izbiraZadnjegaKupcaElement = $tor->getElementByCssSelector("#contentForm\\:realizacija_panel_grid2_content > div > div:nth-child(2) > div > button:nth-child(2)");
             } catch (\Exception $e) {
                 $izbiraZadnjegaKupcaElement = false;
             }
@@ -116,7 +173,7 @@ class StrelivoItem extends OrozjeStrelivoItem
                 sleep(1);
             }
             else {
-                $tor->selectBuyer(185, $this->getVrstaEvidence(), $this->getUser());
+                $tor->selectBuyer($this->getUser());
             }
             $tor->setVrstaDovoljenja($this->getVrstaDovoljenja());
 
@@ -132,7 +189,10 @@ class StrelivoItem extends OrozjeStrelivoItem
 
             if ($kolicinaZaRealizirati > $zaloga) {
                 $tor->setProdanaKolicina($zaloga);
-                $error = $tor->confirmPage($potrdiButtonId, $confirmButtonId);
+                $error = $tor->confirmPage(
+                    $potrdiButtonSelector,
+                    $confirmButtonSelector
+                );
                 if ($error !== null) {
                     // We have an error
                     $error = $error . "\nRealiziral samo " . ($this->getKolicina() - $kolicinaZaRealizirati);
@@ -143,21 +203,24 @@ class StrelivoItem extends OrozjeStrelivoItem
                 } else {
                     // All good.
                     $kolicinaZaRealizirati = $kolicinaZaRealizirati - $zaloga;
-                    $tor->clickById("to33DoneDialogForm:j_idt288");
+                    $tor->getElementByCssSelector("#to33DoneDialogForm > div > div > div > div:nth-child(3) > div.ui-toolbar-group-right > button")->click();
                     sleep(2);
-                    $tor->clickById("contentForm:j_idt50");
+                    $tor->getElementByCssSelector("#main_content > div.card.main-frame > div > div:nth-child(1) button")->click();
                     sleep(2);
                 }
             }
             else {
                 $tor->setProdanaKolicina($kolicinaZaRealizirati);
-                $error = $tor->confirmPage($potrdiButtonId, $confirmButtonId);
+                $error = $tor->confirmPage(
+                    $potrdiButtonSelector,
+                    $confirmButtonSelector
+                );
                 if ($error !== null) {
                     // We have an error
                     $error = $error . "\nRealiziral samo " . ($this->getKolicina() - $kolicinaZaRealizirati) . " od " . $kolicinaZaRealizirati;
                     $this->returnMessage = $error;
                     $this->error = true;
-
+                    return;
                 }
                 $this->returnMessage = "Realizirano";
                 return;

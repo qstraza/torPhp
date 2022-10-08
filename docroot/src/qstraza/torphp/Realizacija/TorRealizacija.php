@@ -332,37 +332,39 @@ class TorRealizacija extends TorProxy
         return $this;
     }
 
-    public function selectBuyer($buttonId, $vrstaEvidence, User $user)
+    public function selectBuyer(User $user)
     {
-        switch (substr($vrstaEvidence, 0, 1)){
-            case "1": // Izdelano orožje.
-                $isciButtonId = 189;
-                $izberiUserButtonId = 194;
-                $dodajUserButtonId = 195;
-                $potrdiAddingNewUserButtonId = 231;
-                $potrdiAddingNewUserConfirmButtonId = 179;
-                break;
+//        switch (substr($vrstaEvidence, 0, 1)){
+//            case "1": // Izdelano orožje.
+//                $isciButtonId = 189;
+//                $izberiUserButtonId = 194;
+//                $dodajUserButtonId = 195;
+//                $potrdiAddingNewUserButtonId = 231;
+//                $potrdiAddingNewUserConfirmButtonId = 179;
+//                break;
+//
+//            case "3": // Nabavljeno in prodano orožje in priglasitveni list.
+//                $isciButtonId = 246;
+//                $izberiUserButtonId = 251;
+//                $dodajUserButtonId = 252;
+//                $potrdiAddingNewUserButtonId = 288;
+//                $potrdiAddingNewUserConfirmButtonId = 236;
+//                break;
+//
+//            case "4": //4 - Nabavljeno in prodano strelivo.
+//                $isciButtonId = 236;
+//                $izberiUserButtonId = 241;
+//                $dodajUserButtonId = 242;
+//                $potrdiAddingNewUserButtonId = 278;
+//                $potrdiAddingNewUserConfirmButtonId = 226;
+//                break;
+//        }
 
-            case "3": // Nabavljeno in prodano orožje in priglasitveni list.
-                $isciButtonId = 246;
-                $izberiUserButtonId = 251;
-                $dodajUserButtonId = 252;
-                $potrdiAddingNewUserButtonId = 288;
-                $potrdiAddingNewUserConfirmButtonId = 236;
-                break;
-
-            case "4": //4 - Nabavljeno in prodano strelivo.
-                $isciButtonId = 236;
-                $izberiUserButtonId = 241;
-                $dodajUserButtonId = 242;
-                $potrdiAddingNewUserButtonId = 278;
-                $potrdiAddingNewUserConfirmButtonId = 226;
-                break;
-        }
-
-        $this->clickById("contentForm:j_idt" . $buttonId);
+        $nextElements = $this->getElementsByCssSelector("#contentForm\\:rel_subjekt ~ *");
+        $selectUserButton = end($nextElements);
+        $selectUserButton->click();
         sleep(2);
-        $this->selectUser($user, $isciButtonId, $izberiUserButtonId, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId);
+        $this->selectUser($user);
         return $this;
 
     }

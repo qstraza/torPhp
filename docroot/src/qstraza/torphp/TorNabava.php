@@ -4,6 +4,9 @@
 namespace qstraza\torphp;
 
 
+use Facebook\WebDriver\WebDriverKeys;
+use qstraza\torphp\Data\User;
+
 class TorNabava extends TorProxy
 {
     public function __construct($clientName = null, $seleniumDriver = null) {
@@ -25,6 +28,7 @@ class TorNabava extends TorProxy
 //    $this->menuClick('TO20');
     }
     public function setOpomba($opomba) {
+        $this->getElementById('contentForm:vno_opombe')->clear();
         $this->writeById('contentForm:vno_opombe', $opomba);
         return $this;
     }
@@ -80,6 +84,10 @@ class TorNabava extends TorProxy
         $this->writeById("contentForm:vno_proizvajalec", $proizvajalec);
         return $this;
     }
+    public function getProizvajalec()
+    {
+        return $this->getElementById("contentForm:vno_proizvajalec")->getAttribute('value');
+    }
     public function setDatumPrejemaOrozja($date)
     {
         $this->writeById("contentForm:vno_dtm_dog_input", $date);
@@ -93,7 +101,15 @@ class TorNabava extends TorProxy
     public function setKolicina($kolicina)
     {
         $this->writeById("contentForm:vno_kolicina", $kolicina);
-        $this->clickById("contentForm:j_idt141");
+        $this->getSeleniumDriver()->getKeyboard()->pressKey(WebDriverKeys::TAB);
+        sleep(1);
+        return $this;
+    }
+    public function selectSeller(User $user)
+    {
+        $this->getElementByCssSelector("#contentForm\\:vno_subjekt + button")->click();
+        sleep(2);
+        $this->selectUser($user);
         return $this;
     }
 }

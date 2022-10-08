@@ -67,22 +67,17 @@ class OrozjeItem extends OrozjeStrelivoItem
 
         switch (substr($this->getVrstaEvidence(), 0, 1)) {
             case "1": // Izdelano orožje.
-
-                $selectBuyerButtonId = 145;
-                $potrdiButtonId = 174;
-                $confirmButtonId = 179;
+                $potrdiButtonSelector = "#main_content > div.card.main-frame > div > div:nth-child(6) > div > div > button:nth-child(3)";
                 break;
 
             case "3": // Nabavljeno in prodano orožje in priglasitveni list.
                 $tor->setPrevzemnikOrozja($this->getUser()->getIme());
                 $tor->setDatumPrevzemaVrnitveOrozja($this->getDate());
-                $selectBuyerButtonId = 190;
-                $potrdiButtonId = 231;
-                $confirmButtonId = 236;
+                $potrdiButtonSelector = "#main_content > div.card.main-frame > div > div:nth-child(4) > div.ui-toolbar.ui-widget.ui-widget-header.ui-corner-all > div > button:nth-child(3)";
                 break;
         }
         $tor->setDrzavaProdaje($this->getDrzava(), $this->getIsEU());
-        $tor->selectBuyer($selectBuyerButtonId, $this->getVrstaEvidence(), $this->getUser());
+        $tor->selectBuyer($this->getUser());
         $tor->setVrstaDovoljenja($this->getVrstaDovoljenja());
 
         if ($this->getVrstaDovoljenja() != "NP - Listina ni potrebna") {
@@ -93,7 +88,10 @@ class OrozjeItem extends OrozjeStrelivoItem
         $tor->setDatumProdaje($this->date);
         $tor->setOpomba($this->getOpombaTor());
 
-        $error = $tor->confirmPage($potrdiButtonId, $confirmButtonId);
+        $error = $tor->confirmPage(
+            $potrdiButtonSelector,
+            "#contentForm\\:confirmDialog > div.ui-dialog-buttonpane.ui-dialog-footer.ui-widget-content > button.ui-confirmdialog-yes"
+        );
 
         if ($error !== null) {
             // We have an error
@@ -117,7 +115,10 @@ class OrozjeItem extends OrozjeStrelivoItem
         $tor->setTovarniskaStevilka($this->getSerijska());
         $tor->setDatumIzdelave($this->getDate());
         $tor->setOpomba($this->getOpombaTor());
-        $error = $tor->confirmPage(118, 123);
+        $error = $tor->confirmPage(
+            "#main_content > div.card.main-frame > div > div:nth-child(5) > div > div > button:nth-child(2)",
+            "#contentForm\\:confirmDialog > div.ui-dialog-buttonpane.ui-dialog-footer.ui-widget-content > button.ui-confirmdialog-yes"
+        );
         if ($error !== null) {
             // We have an error.
             $this->returnMessage = $error;
@@ -130,16 +131,53 @@ class OrozjeItem extends OrozjeStrelivoItem
 
     public function izdelajIstiModel(TorIzdelanoOrozje $tor) {
         try {
-            $tor->clickById("to20DoneDialogForm:j_idt133");
+            $buttonElement = $tor->getElementByCssSelector("#to20DoneDialogForm button:nth-child(2)");
+            if (!$buttonElement->isDisplayed()) {
+                return $this->izdelaj($tor);
+            }
+            else {
+                $buttonElement->click();
+            }
             sleep(1);
         } catch (\Exception $e) {
-            $this->returnMessage = "Ne morem klikniti gumba za dodajanje istega modela!";
+            $this->returnMessage = $e->getMessage();
             $this->error = true;
             return;
         }
 
+        $orozjeDelOrozjaCode = substr($this->getOrozjeDelOrozja(), 0, 1);
+        if ($orozjeDelOrozjaCode != $tor->getOrozjeDelOrozja()) {
+            $tor->setOrozjeDelOrozja($this->getOrozjeDelOrozja());
+        }
+
+        $kategorijaOrozjaCode = explode(" ", trim($this->getKategorija()), 2);
+        $kategorijaOrozjaCode = $kategorijaOrozjaCode[0];
+        if ($kategorijaOrozjaCode != $tor->getKategorijaOrozja()) {
+            $tor->setKategorijaOrozja($this->getKategorija());
+        }
+
+        $tipVrstaOrozjaCode = substr($this->getVrstaOrozja(), 0, 1);
+        if ($tipVrstaOrozjaCode != $tor->getTipVrstaOrozja()) {
+            $tor->setTipVrstaOrozja($this->getVrstaOrozja());
+        }
+
+        if ($tor->getZnamka() != $this->getProizvajalec()) {
+            $tor->setZnamka($this->getProizvajalec());
+        }
+
+        if ($tor->getModel() != $this->getModel()) {
+            $tor->setModel($this->getModel());
+        }
+
+        if ($tor->getKaliber() != $this->getCal()) {
+            $tor->setKaliber($this->getCal());
+        }
+
         $tor->setTovarniskaStevilka($this->getSerijska());
-        $error = $tor->confirmPage(118, 123);
+        $error = $tor->confirmPage(
+            "#main_content > div.card.main-frame > div > div:nth-child(5) > div > div > button:nth-child(2)",
+            "#contentForm\\:confirmDialog > div.ui-dialog-buttonpane.ui-dialog-footer.ui-widget-content > button.ui-confirmdialog-yes"
+        );
         if ($error !== null) {
             // We have an error.
             $this->returnMessage = $error;
@@ -196,7 +234,10 @@ class OrozjeItem extends OrozjeStrelivoItem
         $tor->setStevilkaDobavnice($this->getStevilkaPrevzema());
         $tor->setOpomba($this->getOpombaTor());
 
-        $error = $tor->confirmPage(164, 169);
+        $error = $tor->confirmPage(
+            "#main_content > div.card.main-frame > div > div:nth-child(5) > div > div > button:nth-child(2)",
+            "#contentForm\\:confirmDialog > div.ui-dialog-buttonpane.ui-dialog-footer.ui-widget-content > button.ui-confirmdialog-yes"
+        );
 
         if ($error !== null) {
             // We have an error.
@@ -208,24 +249,103 @@ class OrozjeItem extends OrozjeStrelivoItem
         }
     }
 
+    public function nabaviOdistegaDobavitelja(TorNabavljenoOrozje $tor)
+    {
+        try {
+            $buttonElement = $tor->getElementByCssSelector("#to22DoneDialogForm button:nth-child(2)");
+            if (!$buttonElement->isDisplayed()) {
+                return $this->nabavi($tor);
+            }
+            else {
+                $buttonElement->click();
+            }
+            sleep(1);
+        } catch (\Exception $e) {
+            $this->returnMessage = $e->getMessage();
+            $this->error = true;
+            return;
+        }
+
+        $orozjeDelOrozjaCode = substr($this->getOrozjeDelOrozja(), 0, 1);
+        if ($orozjeDelOrozjaCode != $tor->getOrozjeDelOrozja()) {
+            $tor->setOrozjeDelOrozja($this->getOrozjeDelOrozja());
+        }
+
+        $kategorijaOrozjaCode = explode(" ", trim($this->getKategorija()), 2);
+        $kategorijaOrozjaCode = $kategorijaOrozjaCode[0];
+        if ($kategorijaOrozjaCode != $tor->getKategorijaOrozja()) {
+            $tor->setKategorijaOrozja($this->getKategorija());
+        }
+
+        $tipVrstaOrozjaCode = substr($this->getVrstaOrozja(), 0, 1);
+        if ($tipVrstaOrozjaCode != $tor->getTipVrstaOrozja()) {
+            $tor->setTipVrstaOrozja($this->getVrstaOrozja());
+        }
+
+        if ($tor->getZnamka() != $this->getZnamka()) {
+            $tor->setZnamka($this->getZnamka());
+        }
+
+        if ($tor->getModel() != $this->getModel()) {
+            $tor->setModel($this->getModel());
+        }
+
+        if ($tor->getKaliber() != $this->getCal()) {
+            $tor->setKaliber($this->getCal());
+        }
+
+        $tor->setTovarniskaStevilka($this->getSerijska());
+
+        if ($tor->getProizvajalec() != $this->getProizvajalec()) {
+            $tor->setProizvajalec($this->getProizvajalec());
+        }
+        if ($tor->getLetoIzdelave() != $this->getLetoIzdelave()) {
+            $tor->setLetoIzdelave($this->getLetoIzdelave());
+        }
+        if ($tor->getDrzavaProizvajalka() != $this->getDrzavaProizvajalka()) {
+            $tor->setDrzavaProizvajalka($this->getDrzavaProizvajalka());
+        }
+
+        $error = $tor->confirmPage(
+            "#main_content > div.card.main-frame > div > div:nth-child(5) > div > div > button:nth-child(2)",
+            "#contentForm\\:confirmDialog > div.ui-dialog-buttonpane.ui-dialog-footer.ui-widget-content > button.ui-confirmdialog-yes"
+        );
+        if ($error !== null) {
+            // We have an error.
+            $this->returnMessage = $error;
+            $this->error = true;
+        } else {
+            // All good.
+            $this->returnMessage = "Nabavljeno";
+        }
+    }
     public function nabaviIstiModel(TorNabavljenoOrozje $tor)
     {
         try {
-            $tor->clickById("to22DoneDialogForm:j_idt232");
+            $buttonElement = $tor->getElementByCssSelector("#to22DoneDialogForm button:nth-child(2)");
+            if (!$buttonElement->isDisplayed()) {
+                return $this->nabavi($tor);
+            }
+            else {
+                $buttonElement->click();
+            }
             sleep(1);
         } catch (\Exception $e) {
-            $this->returnMessage = "Ne morem klikniti gumba za dodajanje istega modela!";
+            $this->returnMessage = $e->getMessage();
             $this->error = true;
             return;
         }
 
         // TODO: Napaka v TORu. Ko klikneš, da želiš dodati še en kos za dobavitelja, se kategorija izgubi. Zato je treba izbrati napačno in še 1x pravo.
-        $tor->setKategorijaOrozja("A2 - Avtomatsko strelno orožje");
-        $tor->setKategorijaOrozja($this->getKategorija());
-        $tor->setTipVrstaOrozja($this->getVrstaOrozja());
+//        $tor->setKategorijaOrozja("A2 - Avtomatsko strelno orožje");
+//        $tor->setKategorijaOrozja($this->getKategorija());
+//        $tor->setTipVrstaOrozja($this->getVrstaOrozja());
 
         $tor->setTovarniskaStevilka($this->getSerijska());
-        $error = $tor->confirmPage(164, 169);
+        $error = $tor->confirmPage(
+            "#main_content > div.card.main-frame > div > div:nth-child(5) > div > div > button:nth-child(2)",
+            "#contentForm\\:confirmDialog > div.ui-dialog-buttonpane.ui-dialog-footer.ui-widget-content > button.ui-confirmdialog-yes"
+        );
         if ($error !== null) {
             // We have an error.
             $this->returnMessage = $error;

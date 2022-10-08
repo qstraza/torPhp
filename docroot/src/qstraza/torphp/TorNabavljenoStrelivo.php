@@ -5,6 +5,7 @@ namespace qstraza\torphp;
 
 
 use Facebook\WebDriver\WebDriverBy;
+use Facebook\WebDriver\WebDriverSelect;
 use qstraza\torphp\Data\OrozjeItem;
 use qstraza\torphp\Data\User;
 
@@ -38,25 +39,14 @@ class TorNabavljenoStrelivo extends TorNabava
         return $this;
     }
 
-    public function selectSeller(User $user)
-    {
-        $isciButtonId = 174;
-        $izberiUserButtonId = 179;
-        $dodajUserButtonId = 180;
-        $potrdiAddingNewUserButtonId = 216;
-        $potrdiAddingNewUserConfirmButtonId = 164;
-
-        $this->clickById("contentForm:j_idt107");
-        sleep(2);
-        $this->selectUser($user, $isciButtonId, $izberiUserButtonId, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId);
-        return $this;
-
-    }
-
     public function setDrzavaProizvajalka($drzavaProizvajalka)
     {
         $this->writeById("contentForm:vno_drzava_pro", $drzavaProizvajalka);
         return $this;
+    }
+    public function getDrzavaProizvajalka()
+    {
+        return $this->getElementById("contentForm:vno_drzava_pro")->getAttribute('value');
     }
 
     public function setStrelivoDelStreliva($strelivoDelStreliva)
@@ -77,11 +67,24 @@ class TorNabavljenoStrelivo extends TorNabava
 
         throw new \Exception("Strleivo/Del streliva je napačna: {$strelivoDelStreliva}");
     }
+    public function getStrelivoDelStreliva()
+    {
+        $selectElement = $this->getElementById("contentForm:vno_w61_id_streliva_dela_input");
+        // Now pass it to WebDriverSelect constructor
+        $select = new WebDriverSelect($selectElement);
+        // Get value of first selected option:
+        return $select->getFirstSelectedOption()->getAttribute('value');
+    }
 
     public function setVrstaStreliva($tipVrstaStreliva)
     {
         $this->writeById("contentForm:vno_tov_stevilka", $tipVrstaStreliva);
         return $this;
+    }
+
+    public function getVrstaStreliva()
+    {
+        return $this->getElementById("contentForm:vno_tov_stevilka")->getAttribute('value');
     }
 
     public function setEnota($enota)
@@ -103,9 +106,11 @@ class TorNabavljenoStrelivo extends TorNabava
         throw new \Exception("Izbrana napačna enota: {$enota}");
     }
 
-    public function confirmPage($potrdiButtonId, $confirmButtonId)
+    public function confirmPage($potrdiButtonSelector = null, $confirmButtonSelector = null)
     {
-        $error = parent::confirmPage($potrdiButtonId, $confirmButtonId);
+        $potrdiButtonSelector = "#main_content > div.card.main-frame > div > div:nth-child(5) > div > div > button:nth-child(2)";
+        $confirmButtonSelector = "#contentForm\\:confirmDialog button.ui-confirmdialog-yes";
+        $error = parent::confirmPage($potrdiButtonSelector, $confirmButtonSelector);
         if (!$error) {
             return $error;
         }
@@ -113,7 +118,11 @@ class TorNabavljenoStrelivo extends TorNabava
         // Napaka: TOR-00460 Zapis s takšnim kalibrom, proizvajalcem in znamko že obstaja!
         // Za potrditev vnosa pritisni Potrdi.
         if (strpos($error, "TOR-00460") !== false) {
-            return parent::confirmPage($potrdiButtonId, $confirmButtonId);
+            return parent::confirmPage($potrdiButtonSelector, $confirmButtonSelector);
         }
     }
+
+
+
+
 }

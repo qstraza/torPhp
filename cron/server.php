@@ -1,27 +1,45 @@
 <?php
-$prefix = "/var/www/runs/rojal_";
+$prefix = "/var/www/runs/";
 $httpauthUser = 'tor';
 $httpauthPass = 'tor';
 
+$user = 'rojal';
+
+$validUsers = [
+    'rojal' => [
+        'realiziraj' => 'Realiziraj orožje',
+        'realizirajStrelivo' => 'Realiziraj strelivo',
+        'nabavi' => 'Prevzemi orožje',
+        'nabaviStrelivo' => 'Prevzemi strelivo',
+    ],
+    'rti' => [
+        'realiziraj' => 'Realiziraj orožje',
+        'izdelaj' => 'Izdelaj orožje',
+    ]
+];
+$buttonsStyle = ["primary", "secondary", "success", "info", "warning"];
+
 function createFile($filesuffix) {
     global $prefix;
+    global $user;
     if (!ctype_alpha($filesuffix)) {
         exit;
     }
     echo 1;
-    touch($prefix . $filesuffix);
+    touch($prefix . $user . "_" . $filesuffix);
     exit;
 }
 
 function checkFile($filesuffix) {
     global $prefix;
+    global $user;
     if (!ctype_alpha($filesuffix)) {
         return 0;
     }
-    if (file_exists($prefix . $filesuffix)) {
+    if (file_exists($prefix . $user . "_" . $filesuffix)) {
         return 1;
     }
-    elseif (file_exists($prefix . $filesuffix . "_run")) {
+    elseif (file_exists($prefix . $user . "_" . $filesuffix . "_run")) {
         return 2;
     }
     return 0;
@@ -39,6 +57,16 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
 if ($_SERVER['PHP_AUTH_USER'] != $httpauthUser || $_SERVER['PHP_AUTH_PW'] != $httpauthPass) {
     exit;
 }
+
+if ($_SERVER['REQUEST_URI'] == '/' ) {
+    $user = 'rojal';
+}
+else {
+    $user = strtolower(substr($_SERVER['REQUEST_URI'], 1));
+}
+$user = preg_replace("/[^a-z]+/", "", $user);
+
+if (!key_exists($user, $validUsers)) exit;
 
 if ($_POST['type']) {
     createFile($_POST['type']);
@@ -67,31 +95,31 @@ elseif ($_POST['checkFile']) {
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.1/css/bootstrap.min.css" integrity="sha512-siwe/oXMhSjGCwLn+scraPOWrJxHlUgMBMZXdPe2Tnk3I0x3ESCoLz7WZ5NTH6SZrywMY+PB1cjyqJ5jAluCOg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-    <!-- Custom styles for this template -->
-    <link href="cover.css" rel="stylesheet">
   </head>
 
   <body class="text-center">
 
     <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
       <main role="main" class="inner cover">
-        <h1 class="cover-heading">HackaTOR</h1>
+        <h1 class="cover-heading">HackaTOR / <?php echo $user;?></h1>
         <p class="lead action">
-            <button data-type="orozje" type="button" class="btn btn-lg btn-primary" <?php if (checkFile("orozje")>0) echo "disabled"?>><span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>Realiziraj orožje</button>
-            <button data-type="strelivo" type="button" class="btn btn-lg btn-secondary" <?php if (checkFile("strelivo")>0) echo "disabled"?>><span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>Realiziraj strelivo</button>
-            <button data-type="prevzemiOrozje" type="button" class="btn btn-lg btn-success" <?php if (checkFile("prevzemiOrozje")>0) echo "disabled"?>><span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>Prevzemi orožje</button>
-            <button data-type="prevzemiStrelivo" type="button" class="btn btn-lg btn-info" <?php if (checkFile("prevzemiStrelivo")>0) echo "disabled"?>><span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>Prevzemi strelivo</button>
+            <?php 
+                $i = 0;
+                foreach($validUsers[$user] as $buttontype => $buttontext) {
+                    ?>
+                    <button data-type="<?php echo $buttontype;?>" type="button" class="btn btn-lg btn-<?php echo $buttonsStyle[$i++];?>" <?php if (checkFile($buttontype)>0) echo "disabled"?>><span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span><?php echo $buttontext;?></button>
+                    <?php
+                }
+            ?>
         </p>
       </main>
     </div>
 
-
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js" integrity="sha512-aVKKRRi/Q/YV+4mjoKBsE4x3H+BkegoM/em46NNlCqNTmUYADjBbeNefNxYV7giUp0VxICtqdrbqU7iVaeZNXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         $(document).ready(function() {
             $(".action button").on("click", function(){
-                $.post( "/", {
+                $.post( "", {
                     type: $(this).attr("data-type"),
                 }, function( data ) {
 
@@ -101,7 +129,7 @@ elseif ($_POST['checkFile']) {
             setInterval(function() {
                 $(".action button:disabled").each(function(event){
                     let $button = $(this);
-                    $.post( "/", {
+                    $.post( "", {
                         checkFile: $(this).attr("data-type"),
                     }, function( data ) {
                         switch (data) {

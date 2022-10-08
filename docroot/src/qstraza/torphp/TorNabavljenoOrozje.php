@@ -66,21 +66,6 @@ class TorNabavljenoOrozje extends TorNabava
         return $this;
     }
 
-    public function selectSeller(User $user)
-    {
-        $isciButtonId = 179;
-        $izberiUserButtonId = 184;
-        $dodajUserButtonId = 185;
-        $potrdiAddingNewUserButtonId = 221;
-        $potrdiAddingNewUserConfirmButtonId = 169;
-
-        $this->clickById("contentForm:j_idt107");
-        sleep(2);
-        $this->selectUser($user, $isciButtonId, $izberiUserButtonId, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId);
-        return $this;
-
-    }
-
     public function setLetoIzdelave($letoIzdelave)
     {
         $this->writeById("contentForm:leto_izdelave", $letoIzdelave);
@@ -91,5 +76,15 @@ class TorNabavljenoOrozje extends TorNabava
     {
         $this->writeById("contentForm:vno_drz_id_n3_pro", $drzavaProizvajalka);
         return $this;
+    }
+
+    public function getLetoIzdelave()
+    {
+        return $this->getElementById("contentForm:leto_izdelave")->getAttribute('value');
+    }
+
+    public function getDrzavaProizvajalka()
+    {
+        return $this->getElementById("contentForm:vno_drz_id_n3_pro")->getAttribute('value');
     }
 }

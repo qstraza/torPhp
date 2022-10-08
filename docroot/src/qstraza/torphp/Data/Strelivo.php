@@ -29,11 +29,11 @@ class Strelivo extends SpreadSheetData
                 /** @var StrelivoItem $row */
                 $row = new StrelivoItem();
                 $user = new User();
-                $user->setIme($entry[$this->getZapisnik('Ime')]);
-                $user->setNaslov($entry[$this->getZapisnik('Naslov')]);
-                $user->setMesto($entry[$this->getZapisnik('Mesto')]);
-                $user->setDrzava($entry[$this->getZapisnik('Država')]);
-                $user->setDavcna($entry[$this->getZapisnik('Davčna')]);
+                $user->setIme(trim($entry[$this->getZapisnik('Ime')]));
+                $user->setNaslov(trim($entry[$this->getZapisnik('Naslov')]));
+                $user->setMesto(trim($entry[$this->getZapisnik('Mesto')]));
+                $user->setDrzava(trim($entry[$this->getZapisnik('Država')]));
+                $user->setDavcna(trim($entry[$this->getZapisnik('Davčna')]));
                 $user->setVrstaKupca($entry[$this->getZapisnik('Vrsta kupca')]);
                 $row->setUser($user);
 
@@ -41,12 +41,13 @@ class Strelivo extends SpreadSheetData
                 $row->setDate($entry[$this->getZapisnik('Datum')]);
                 $row->setIsEU($entry[$this->getZapisnik('EU?')] == "Da");
                 $row->setVrstaDovoljenja($entry[$this->getZapisnik('Vrsta dovoljenja')]);
-                $row->setOrganIzdaje($entry[$this->getZapisnik('Organ izdaje')]);
+                $row->setOrganIzdaje(trim($entry[$this->getZapisnik('Organ izdaje')]));
                 $row->setStevilkaListine($entry[$this->getZapisnik('Številka listine')]);
                 $row->setDatumIzdajeListine($entry[$this->getZapisnik('Datum izdaje listine')]);
                 $row->setStrelivoDelStreliva($entry[$this->getZapisnik('Strelivo / del streliva')]);
-                $row->setProizvajalec($entry[$this->getZapisnik('Proizvajalec')]);
-                $row->setZnamka($entry[$this->getZapisnik('Proizvajalec')]);
+                $row->setProizvajalec(trim($entry[$this->getZapisnik('Proizvajalec')]));
+                $row->setZnamka(trim($entry[$this->getZapisnik('Proizvajalec')]));
+                $row->setCal(trim($entry[$this->getZapisnik('Kaliber')]));
                 $row->setKolicina($entry[$this->getZapisnik('Količina')]);
                 $row->setOpombaTor($entry[$this->getZapisnik('Opomba TOR')]);
 

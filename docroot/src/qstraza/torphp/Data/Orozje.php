@@ -41,9 +41,9 @@ class Orozje extends SpreadSheetData
                     /** @var OrozjeItem $row */
                     $row = new OrozjeItem();
                     $user = new User();
-                    $user->setIme($entry[$this->getZapisnik('Ime')]);
-                    $user->setNaslov($entry[$this->getZapisnik('Naslov')]);
-                    $user->setMesto($entry[$this->getZapisnik('Mesto')]);
+                    $user->setIme(trim($entry[$this->getZapisnik('Ime')]));
+                    $user->setNaslov(trim($entry[$this->getZapisnik('Naslov')]));
+                    $user->setMesto(trim($entry[$this->getZapisnik('Mesto')]));
                     $user->setDrzava($entry[$this->getZapisnik('Država')]);
                     $user->setDavcna($entry[$this->getZapisnik('Davčna')]);
                     $user->setVrstaKupca($entry[$this->getZapisnik('Vrsta kupca')]);
@@ -54,12 +54,12 @@ class Orozje extends SpreadSheetData
                     $row->setIsEU($entry[$this->getZapisnik('EU?')] == "Da");
                     $row->setVrstaDovoljenja($entry[$this->getZapisnik('Vrsta dovoljenja')]);
                     $row->setOrganIzdaje($entry[$this->getZapisnik('Organ izdaje')]);
-                    $row->setStevilkaListine($entry[$this->getZapisnik('Številka listine')]);
+                    $row->setStevilkaListine(trim($entry[$this->getZapisnik('Številka listine')]));
                     $row->setDatumIzdajeListine($entry[$this->getZapisnik('Datum izdaje listine')]);
                     $row->setKategorija($entry[$this->getZapisnik('Kategorija orožja')]);
-                    $row->setProizvajalec($entry[$this->getZapisnik('Proizvajalec')]);
-                    $row->setZnamka($entry[$this->getZapisnik('Proizvajalec')]);
-                    $row->setModel($entry[$this->getZapisnik('Model')]);
+                    $row->setProizvajalec(trim($entry[$this->getZapisnik('Proizvajalec')]));
+                    $row->setZnamka(trim($entry[$this->getZapisnik('Proizvajalec')]));
+                    $row->setModel(trim($entry[$this->getZapisnik('Model')]));
                     $row->setCal($entry[$this->getZapisnik('Kaliber')]);
                     $row->setSerijska($serijska);
                     $row->setOpombaTor($entry[$this->getZapisnik('Opomba TOR')]);
@@ -95,8 +95,8 @@ class Orozje extends SpreadSheetData
                     $row->setOrozjeDelOrozja($entry[$this->getZapisnik('Orožje/del orožja')]);
                     $row->setKategorija($entry[$this->getZapisnik('Kategorija orožja')]);
                     $row->setVrstaOrozja($entry[$this->getZapisnik('Tip/vrsta orožja')]);
-                    $row->setProizvajalec($entry[$this->getZapisnik('Proizvajalec')]);
-                    $row->setModel($entry[$this->getZapisnik('Model')]);
+                    $row->setProizvajalec(trim($entry[$this->getZapisnik('Proizvajalec')]));
+                    $row->setModel(trim($entry[$this->getZapisnik('Model')]));
                     $row->setCal($entry[$this->getZapisnik('Kaliber')]);
                     $row->setSerijska($serijska);
                     $row->setDate($entry[$this->getZapisnik('Datum')]);
@@ -146,43 +146,16 @@ class Orozje extends SpreadSheetData
 
     public function logs(OrozjeItem $orozjeItem, $type, $msg, $isError)
     {
-        if ($GLOBALS['multiSerialNumbersOptionEnabled']) {
-            static $i = 2;
+        $rowIndex = $orozjeItem->getSpreadsheetEntry()['rowIndex'];
+        $letter = $this->columnToLetter($this->getZapisnik('TorPHP'));
+        $body = date('d-m-Y H:i:s') . " - " . $msg;
+        $this->updateCell("{$this->getWorksheetName()}!{$letter}{$rowIndex}", $body);
 
-            $date = new \DateTime();
-            $values = [
-                [
-                    $type,
-                    $orozjeItem->getSerijska(),
-                    $msg,
-                    $date->format('d-m-Y H:i:s'),
-                    $isError ? "FAIL" : "OK",
-                ],
-                // Additional rows ...
-            ];
-            $body = new Google_Service_Sheets_ValueRange([
-                'values' => $values
-            ]);
-            $params = [
-                'valueInputOption' => 'USER_ENTERED'
-            ];
-
-            $response = $this->service->spreadsheets_values->update($this->getSpreadsheetId(), 'logs!A' . $i . ':E' . $i,
-                $body, $params);
-            $i++;
-            return $response;
+        if (!$isError) {
+            $letter = $this->columnToLetter($this->getZapisnik('Realizirano'));
+            $this->updateCell("{$this->getWorksheetName()}!{$letter}{$rowIndex}", "Da");
         }
-        elseif($this->method == "nerealizirane") {
-            $rowIndex = $orozjeItem->getSpreadsheetEntry()['rowIndex'];
-            $letter = $this->columnToLetter($this->getZapisnik('TorPHP'));
-            $body = date('d-m-Y H:i:s') . " - " . $msg;
-            $this->updateCell("{$this->getWorksheetName()}!{$letter}{$rowIndex}", $body);
 
-            if (!$isError) {
-                $letter = $this->columnToLetter($this->getZapisnik('Realizirano'));
-                $this->updateCell("{$this->getWorksheetName()}!{$letter}{$rowIndex}", "Da");
-            }
-        }
     }
 
     public function logsMulti($rowIndex, $serial, $msg, $isError) {

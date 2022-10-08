@@ -6,6 +6,7 @@ services:
       - ./firefox-profiles:/root/.mozilla/firefox
       - ./google-jsons:/google-jsons:ro
       - ./docroot:/app
+      - ./cron/runs:/runs
       - "/etc/timezone:/etc/timezone:ro"
       - "/etc/localtime:/etc/localtime:ro"
     logging:

@@ -113,7 +113,11 @@ class TorProxy
      */
     public function getOrozjeDelOrozja()
     {
-        return $this->orozjeDelOrozja;
+        $selectElement = $this->getElementById("contentForm:vno_w60_id_orozja_dela_input");
+        // Now pass it to WebDriverSelect constructor
+        $select = new WebDriverSelect($selectElement);
+        // Get value of first selected option:
+        return $select->getFirstSelectedOption()->getAttribute('value');
     }
 
     /**
@@ -146,7 +150,13 @@ class TorProxy
      */
     public function getKategorijaOrozja()
     {
-        return $this->kategorijaOrozja;
+        $selectElement = $this->getElementById("contentForm:ui_w05_kategorija_orozja_input");
+        // Now pass it to WebDriverSelect constructor
+        $select = new WebDriverSelect($selectElement);
+        // Get value of first selected option:
+        $value = $select->getFirstSelectedOption()->getAttribute('value');
+        $value = explode("-", $value);
+        return $value[1];
     }
 
     /**
@@ -181,7 +191,11 @@ class TorProxy
      */
     public function getTipVrstaOrozja()
     {
-        return $this->tipVrstaOrozja;
+        $selectElement = $this->getElementById("contentForm:ui_w01_vrsta_orozja_input");
+        // Now pass it to WebDriverSelect constructor
+        $select = new WebDriverSelect($selectElement);
+        // Get value of first selected option:
+        return $select->getFirstSelectedOption()->getAttribute('value');
     }
 
     /**
@@ -212,7 +226,7 @@ class TorProxy
      */
     public function getZnamka()
     {
-        return $this->znamka;
+        return $this->getElementById("contentForm:vno_znamka")->getAttribute('value');
     }
 
     /**
@@ -231,7 +245,7 @@ class TorProxy
      */
     public function getKaliber()
     {
-        return $this->kaliber;
+        return $this->getElementById("contentForm:vno_kaliber")->getAttribute('value');
     }
 
     /**
@@ -268,7 +282,7 @@ class TorProxy
      */
     public function getModel()
     {
-        return $this->model;
+        return $this->getElementById("contentForm:vno_model")->getAttribute('value');
     }
 
     /**
@@ -378,6 +392,7 @@ class TorProxy
 
     protected function writeById($id, $value)
     {
+        $this->getElementById($id)->clear();
         return $this->clickById($id)
             ->sendKeys($value);
     }
@@ -391,11 +406,14 @@ class TorProxy
         return $element;
     }
 
-    protected function getElementByCssSelector($selector)
+    public function getElementByCssSelector($selector)
     {
         return $this->getSeleniumDriver()->findElement(WebDriverBy::cssSelector($selector));
     }
-
+    public function getElementsByCssSelector($selector)
+    {
+        return $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector($selector));
+    }
     protected function waitUntilElement($elementId)
     {
         return $this->getSeleniumDriver()->wait()->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::id($elementId)));
@@ -488,11 +506,12 @@ class TorProxy
         return new TorIzdelanoOrozje($this->clientName, $this->seleniumDriver);
     }
 
-    public function confirmPage($potrdiButtonId, $confirmButtonId)
+    public function confirmPage($potrdiButtonSelector, $confirmButtonSelector)
     {
-        $this->clickById('contentForm:j_idt' . $potrdiButtonId);
+        sleep(1);;
+        $this->getElementByCssSelector($potrdiButtonSelector)->click();
         sleep(0.5);
-        $this->clickById('contentForm:j_idt' . $confirmButtonId);
+        $this->getElementByCssSelector($confirmButtonSelector)->click();
         sleep(2);
         try {
             $ok = $this->seleniumDriver->findElement(WebDriverBy::cssSelector('.ui-dialog-titlebar span.ui-dialog-title'));
@@ -575,8 +594,12 @@ class TorProxy
         return $this->getSeleniumDriver()->executeScript($js);
     }
 
-    private function createUser(User $user, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId) {
-        $this->clickById("kupecDialogForm:j_idt" . $dodajUserButtonId);
+    private function createUser(User $user) {
+        $dodajUserButtonSelector = "#kupecDialogForm > div > div > div > div.ui-toolbar.ui-widget.ui-widget-header.ui-corner-all > div > button:nth-child(2)";
+        $potrdiAddingNewUserButtonSelector = "#to50DialogForm > div > div > div > div.ui-toolbar.ui-widget.ui-widget-header.ui-corner-all > div > button:nth-child(2)";
+        $potrdiAddingNewUserConfirmButtonSelector = "#contentForm\\:confirmDialog > div.ui-dialog-footer > button.ui-confirmdialog-yes";
+
+        $this->getElementByCssSelector($dodajUserButtonSelector)->click();
         sleep(2);
         $this->setVrstaKupca($user->getVrstaKupca());
         $vrstaKupcaCode = substr($user->getVrstaKupca(), 0, 1);
@@ -590,9 +613,9 @@ class TorProxy
         $this->writeById("to50DialogForm:dik_naselje", $user->getMesto());
         $this->writeById("to50DialogForm:dik_ulica", $user->getNaslov());
 
-        $this->clickById("to50DialogForm:j_idt" . $potrdiAddingNewUserButtonId);
+        $this->getElementByCssSelector($potrdiAddingNewUserButtonSelector)->click();
         sleep(0.5);
-        $this->clickById("contentForm:j_idt" . $potrdiAddingNewUserConfirmButtonId);
+        $this->getElementByCssSelector($potrdiAddingNewUserConfirmButtonSelector)->click();
 
         if ($this->getErrorStatus()) {
             throw new \Exception("Napaka pri dodajanju novega uporabnika {$user->getIme()}");
@@ -600,22 +623,25 @@ class TorProxy
         sleep(1);
         return $this;
     }
-    public function selectUser(User $user, $isciButtonId, $izberiUserButtonId, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId) {
+
+    public function selectUser(User $user) {
+        $isciButtonSelector = "#kupecDialogForm > div > div > div > div.ui-fluid > div.ui-toolbar.ui-widget.ui-widget-header.ui-corner-all > div > button";
+        $izberiUserButtonSelector = "#kupecDialogForm > div > div > div > div.ui-toolbar.ui-widget.ui-widget-header.ui-corner-all > div > button:nth-child(1)";
+
         // Write title to search.
         $this->writeById("kupecDialogForm:kupec_dialog_rel_subjekt", $user->getIme());
         // Click search button.
-        $this->clickById("kupecDialogForm:j_idt" . $isciButtonId);
+        $this->getElementByCssSelector($isciButtonSelector)->click();
         sleep(2);
         // If we do not have any hits, we need to create a new user.
         if ($this->getElementById("kupecDialogForm:kupecDataTable_data")->getText() == 'Ni zapisov.') {
-            $this->createUser($user, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId);
-            return $this->selectUser($user, $isciButtonId, $izberiUserButtonId, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId);
+            return $this->createUser($user);
         } // We have hits.
         else {
             // Checking if we have only one hit.
             if ($this->getElementByCssSelector('#kupecDialogForm\\:kupecDataTable_paginator_bottom .ui-paginator-current')->getText() == '1 - 1 od 1') {
                 $this->getElementByCssSelector('#kupecDialogForm\\:kupecDataTable_data td')->click();
-                $this->clickById('kupecDialogForm:j_idt' . $izberiUserButtonId);
+                $this->getElementByCssSelector($izberiUserButtonSelector)->click();
                 // We have one hit - selecting it.
                 return $this;
             } // We have multiple hits. We need to search by the street.
@@ -632,17 +658,15 @@ class TorProxy
                 foreach ($elements as $element) {
                     if (strpos(strtolower($element->getText()), strtolower($user->getNaslov())) !== false) {
                         $element->findElement(WebDriverBy::cssSelector("td"))->click();
-                        $this->clickById('kupecDialogForm:j_idt' . $izberiUserButtonId);
+                        $this->getElementByCssSelector($izberiUserButtonSelector)->click();
                         return $this;
                     }
                 }
-                $this->createUser($user, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId);
-                return $this->selectUser($user, $isciButtonId, $izberiUserButtonId, $dodajUserButtonId, $potrdiAddingNewUserButtonId, $potrdiAddingNewUserConfirmButtonId);
-//                throw new \Exception("Oseb/podjetij z nazivom {$orozjeItem->getIme()} in ulico {$orozjeItem->getNaslov()} ne najdem!");
+                $this->createUser($user);
+                return $this->selectUser($user);
             }
         }
     }
-
     /**
      * @param mixed $vrstaKupca
      * @return TorProxy

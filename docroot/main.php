@@ -21,6 +21,15 @@ use qstraza\torphp\TorIskanje;
 use qstraza\torphp\TorNabavljenoOrozje;
 use qstraza\torphp\TorNabavljenoStrelivo;
 
+function deleteJob($clientName, $action) {
+    try {
+        unlink("/runs/" . $clientName . "_" . $action . "_run");
+    }
+    catch (\Exception $e) {
+
+    }
+}
+
 if (count($argv) >= 5) {
     date_default_timezone_set('Europe/Ljubljana');
 
@@ -106,14 +115,16 @@ if (count($argv) >= 5) {
                 foreach ($neizdelanoOrozje as $item) {
                     $itemsPerRow[$item->getSpreadsheetEntry()['rowIndex']][] = $item;
                 }
+                $prviItem = true;
                 foreach ($itemsPerRow as $row) {
                     /** @var OrozjeItem $item */
                     $batchLength = count($row);
                     $batchAllOK = true;
                     foreach ($row as $i => $item) {
                         try {
-                            if ($i == 0) {
+                            if ($prviItem) {
                                 $item->izdelaj($tor);
+                                $prviItem = false;
                             }
                             else {
                                 $item->izdelajIstiModel($tor);
@@ -144,15 +155,17 @@ if (count($argv) >= 5) {
                 foreach ($nabavljeno as $item) {
                     $itemsPerRow[$item->getSpreadsheetEntry()['rowIndex']][] = $item;
                 }
+                $prviItem = true;
                 foreach ($itemsPerRow as $row) {
                     /** @var OrozjeItem $item */
                     foreach ($row as $i => $item) {
                         try {
-                            if ($i == 0) {
+                            if ($prviItem) {
                                 $item->nabavi($tor);
+                                $prviItem = false;
                             }
                             else {
-                                $item->nabaviIstiModel($tor);
+                                $item->nabaviOdistegaDobavitelja($tor);
                             }
                             $orozje->logs($item->getSpreadsheetEntry()['rowIndex'], $item->getSerijska(), $item->getReturnMessage(), $item->isError());
                         } catch (\Exception $e) {
@@ -184,10 +197,17 @@ if (count($argv) >= 5) {
                 // Vrne vse nerealizirane itme iz spreadsheeta
                 $nabavljeno = $strelivo->getNabavljeno();
                 $tor = new TorNabavljenoStrelivo($clientName);
+                $prviItem = true;
                 /** @var StrelivoItem $item */
                 foreach ($nabavljeno as $item) {
                     try {
-                        $item->nabavi($tor);
+                        if ($prviItem) {
+                            $item->nabavi($tor);
+                            $prviItem = false;
+                        }
+                        else {
+                            $item->nabaviOdistegaDobavitelja($tor);
+                        }
                         $strelivo->logs($item->getSpreadsheetEntry()['rowIndex'], $item->getReturnMessage());
                     } catch (\Exception $e) {
                         $strelivo->logs($item->getSpreadsheetEntry()['rowIndex'], $e->getMessage());
@@ -247,6 +267,7 @@ if (count($argv) >= 5) {
                     fwrite($fp, $contents);
                     fclose($fp);
                 }
+                break;
             case 'fix':
                 $tor = new TorIskanje($clientName);
 
@@ -278,6 +299,7 @@ if (count($argv) >= 5) {
                     fwrite($fp, $contents);
                     fclose($fp);
                 }
+                break;
             case 'brisiRealizacijo':
                 $tor = new TorIskanje($clientName);
                 $lines = explode("\n", $contents = file_get_contents('/app/lines.csv'));
@@ -309,7 +331,7 @@ if (count($argv) >= 5) {
                     fwrite($fp, $contents);
                     fclose($fp);
                 }
-
+                break;
             case 'fix2':
                 $tor = new TorIskanje($clientName);
 
@@ -340,8 +362,9 @@ if (count($argv) >= 5) {
 
         }
     } catch (\Exception $e) {
-        echo $e->getMessage();
+//        echo $e->getMessage();
     }
+    deleteJob($clientName, $action);
     $tor->logOut();
 }
 else {

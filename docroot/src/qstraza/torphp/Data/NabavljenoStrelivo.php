@@ -52,6 +52,7 @@ class NabavljenoStrelivo extends SpreadSheetData
             if ($i++ == 0){
                 continue;
             }
+            $entry['rowIndex'] = $i;
             /** @var StrelivoItem $row */
             $row = new StrelivoItem();
             $user = new User();
@@ -79,7 +80,7 @@ class NabavljenoStrelivo extends SpreadSheetData
 
             $row->setZnamka($entry[$this->getZapisnik('znamka')]);
 //            $row->setEnota($entry[$this->getZapisnik('Enota')]);
-            $row->setCal($entry[$this->getZapisnik('kaliber')]);
+            $row->setCal($entry[$this->getZapisnik('Kaliber')]);
             $row->setProizvajalec($entry[$this->getZapisnik('znamka')]);
             $row->setDrzavaProizvajalka($entry[$this->getZapisnik('Država proizvajalca')]);
             $row->setOpombaTor($entry[$this->getZapisnik('Opomba')]);
@@ -91,7 +92,7 @@ class NabavljenoStrelivo extends SpreadSheetData
 
     public function logs($rowIndex, $msg)
     {
-        $rowIndex += 17;
+        $rowIndex += 15;
         $letter = $this->columnToLetter($this->getZapisnik('Logs'));
         $body = date('d-m-Y H:i:s') . " - " . $msg;
         $this->updateCell("{$this->getWorksheetName()}!{$letter}{$rowIndex}", $body);

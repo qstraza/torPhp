@@ -52,9 +52,9 @@ class NabavljenoOrozje extends SpreadSheetData
                 /** @var OrozjeItem $row */
                 $row = new OrozjeItem();
                 $user = new User();
-                $user->setIme($supplier['naziv firme']);
-                $user->setNaslov($supplier['ulica']);
-                $user->setMesto($supplier['mesto']);
+                $user->setIme(trim($supplier['naziv firme']));
+                $user->setNaslov(trim($supplier['ulica']));
+                $user->setMesto(trim($supplier['mesto']));
                 $user->setDavcna($supplier['davcna']);
                 $user->setVrstaKupca($supplier['vrsta kupca']);
                 $user->setDrzava($supplier['drzava']);
@@ -75,11 +75,11 @@ class NabavljenoOrozje extends SpreadSheetData
                 $row->setKategorija($entry[$this->getZapisnik('Kategorija')]);
                 $row->setVrstaOrozja($entry[$this->getZapisnik('Tip/Vrsta orožja')]);
 
-                $row->setZnamka($entry[$this->getZapisnik('znamka')]);
-                $row->setModel($entry[$this->getZapisnik('model')]);
+                $row->setZnamka(trim($entry[$this->getZapisnik('znamka')]));
+                $row->setModel(trim($entry[$this->getZapisnik('model')]));
                 $row->setCal($entry[$this->getZapisnik('kaliber')]);
-                $row->setSerijska($serijska);
-                $row->setProizvajalec($entry[$this->getZapisnik('znamka')]);
+                $row->setSerijska(trim($serijska));
+                $row->setProizvajalec(trim($entry[$this->getZapisnik('znamka')]));
                 $row->setLetoIzdelave($entry[$this->getZapisnik('Leto izdelave')]);
                 $row->setDrzavaProizvajalka($entry[$this->getZapisnik('Država proizvajalka')]);
 
@@ -105,8 +105,11 @@ class NabavljenoOrozje extends SpreadSheetData
         $letter = $this->columnToLetter($this->getZapisnik('Logs'));
         $cellValue = $this->getCellValue($this->getWorksheetName(), $letter . $rowIndex);
 
+        $date = new \DateTime();
+        $currentTime = $date->format('d-m-Y H:i:s');
+
         $text = $isError ? "FAIL - {$serial}" : "OK - {$serial}";
-        $text .= " ({$msg})\n";
+        $text .= " ({$msg}) / {$currentTime}\n";
         $body = $cellValue . $text;
         $this->updateCell("{$this->getWorksheetName()}!{$letter}{$rowIndex}", $body);
     }

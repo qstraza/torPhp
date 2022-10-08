@@ -137,7 +137,7 @@ class TorRealizacijaOrozja extends TorRealizacija
     {
         $this->menuClick('iskanje');
         $this->writeById('contentForm:vno_tov_stevilka', $serijska);
-        $this->clickById('contentForm:j_idt51');
+        $this->clickById('contentForm:searchBtn');
         sleep(1);
         $error = $this->getErrorStatus();
         if ($error !== null) {
@@ -165,7 +165,7 @@ class TorRealizacijaOrozja extends TorRealizacija
                     throw new \Exception("Neznana vrsta evidence!");
                 }
                 $element->findElement(WebDriverBy::cssSelector("td"))->click();
-                $this->clickById('contentForm:j_idt59');
+                $this->getElementByCssSelector("#main_content > div.card.main-frame > div > div:nth-child(1) > div > div:nth-child(2) > div > button:nth-child(3)")->click();
             }
             break;
         }
@@ -184,7 +184,7 @@ class TorRealizacijaOrozja extends TorRealizacija
         if ($vrstaEvidence !== false) {
             $this->setVrstaEvidence($vrstaEvidence);
         }
-        $this->clickById('contentForm:j_idt51');
+        $this->clickById('contentForm:searchBtn');
         sleep(1);
         $error = $this->getErrorStatus();
         if ($error !== null) {
@@ -193,7 +193,7 @@ class TorRealizacijaOrozja extends TorRealizacija
         $elements = $this->getSeleniumDriver()->findElements(WebDriverBy::cssSelector('#contentForm\:to11DataTable_data tr'));
         foreach ($elements as $element) {
             $element->findElement(WebDriverBy::cssSelector("td"))->click();
-            $this->clickById('contentForm:j_idt59');
+            $this->getElementByCssSelector("#main_content > div.card.main-frame > div > div:nth-child(1) > div > div:nth-child(2) > div > button:nth-child(3)")->click();
 
             break;
         }

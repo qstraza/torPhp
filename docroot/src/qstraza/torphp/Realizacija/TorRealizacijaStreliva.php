@@ -10,6 +10,7 @@ namespace qstraza\torphp\Realizacija;
 
 
 use Facebook\WebDriver\WebDriverBy;
+use Facebook\WebDriver\WebDriverKeys;
 
 class TorRealizacijaStreliva extends TorRealizacija
 {
@@ -70,15 +71,16 @@ class TorRealizacijaStreliva extends TorRealizacija
     {
         $this->prodanaKolicina = $prodanaKolicina;
         $this->writeById('contentForm:rel_kolicina', $prodanaKolicina);
-        $this->getSeleniumDriver()->findElement(WebDriverBy::cssSelector("#contentForm\:j_idt206"))->click();
-        sleep(0.3);
+        $this->getSeleniumDriver()->getKeyboard()->pressKey(WebDriverKeys::TAB);
+        sleep(1);
         return $this;
     }
 
-    public function searchStrelivoDelStrelivaByName($strelivoDelStreliva, $proizvajalec, $nerealizirane = false, $vrstaEvidence = false)
+    public function searchStrelivoDelStrelivaByNameCal($cal, $strelivoDelStreliva, $proizvajalec, $nerealizirane = false, $vrstaEvidence = false)
     {
         $this->menuClick('iskanje');
         $this->writeById('contentForm:vno_proizvajalec', $proizvajalec);
+        $this->writeById('contentForm:vno_kaliber', $cal);
 
         $this->setStrelivoDelStreliva($strelivoDelStreliva);
         if ($nerealizirane !== false) {
@@ -87,7 +89,7 @@ class TorRealizacijaStreliva extends TorRealizacija
         if ($vrstaEvidence !== false) {
             $this->setVrstaEvidence($vrstaEvidence);
         }
-        $this->clickById('contentForm:j_idt51');
+        $this->clickById('contentForm:searchBtn');
         sleep(1);
         $error = $this->getErrorStatus();
         if ($error !== null) {
