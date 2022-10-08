@@ -156,7 +156,7 @@ class OrozjeItem extends OrozjeStrelivoItem
             $tor->setKategorijaOrozja($this->getKategorija());
         }
 
-        $tipVrstaOrozjaCode = substr($this->getVrstaOrozja(), 0, 1);
+        $tipVrstaOrozjaCode = substr($this->getVrstaOrozja(), 0, 3);
         if ($tipVrstaOrozjaCode != $tor->getTipVrstaOrozja()) {
             $tor->setTipVrstaOrozja($this->getVrstaOrozja());
         }
@@ -277,7 +277,7 @@ class OrozjeItem extends OrozjeStrelivoItem
             $tor->setKategorijaOrozja($this->getKategorija());
         }
 
-        $tipVrstaOrozjaCode = substr($this->getVrstaOrozja(), 0, 1);
+        $tipVrstaOrozjaCode = substr($this->getVrstaOrozja(), 0, 3);
         if ($tipVrstaOrozjaCode != $tor->getTipVrstaOrozja()) {
             $tor->setTipVrstaOrozja($this->getVrstaOrozja());
         }

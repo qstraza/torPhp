@@ -195,7 +195,8 @@ class TorProxy
         // Now pass it to WebDriverSelect constructor
         $select = new WebDriverSelect($selectElement);
         // Get value of first selected option:
-        return $select->getFirstSelectedOption()->getAttribute('value');
+        $value = $select->getFirstSelectedOption()->getAttribute('value');
+        return substr($value, 2, 3);
     }
 
     /**
