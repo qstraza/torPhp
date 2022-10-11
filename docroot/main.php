@@ -363,6 +363,7 @@ if (count($argv) >= 5) {
         }
     } catch (\Exception $e) {
 //        echo $e->getMessage();
+        deleteJob($clientName, $action);
     }
     deleteJob($clientName, $action);
     $tor->logOut();

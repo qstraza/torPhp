@@ -1,6 +1,9 @@
 import os.path
 import sys
 import subprocess
+import datetime
+
+DELETE_RUNNING_JOB_AFTER_SECONDS = 3600
 
 users = {
     "rojal": {
@@ -28,6 +31,7 @@ if len(sys.argv) != 2:
 
 dir = sys.argv[1]
 runsDir = dir + "/cron/runs/"
+now = datetime.datetime.now()
 for file in os.listdir(runsDir):
     try:
         fileSplit = file.split("_")
@@ -35,6 +39,10 @@ for file in os.listdir(runsDir):
         action = fileSplit[1]
         if len(fileSplit) == 3:
             if fileSplit[2] == "run":
+                file_cre_date=datetime.datetime.fromtimestamp(os.path.getctime(runsDir + file))
+                diff=(now-file_cre_date).seconds
+                if diff > DELETE_RUNNING_JOB_AFTER_SECONDS:
+                    os.remove(runsDir + file)
                 continue
             else:
                 os.remove(runsDir + file)
@@ -66,4 +74,3 @@ for file in os.listdir(runsDir):
         users[user]['actions'][action],
         users[user]['type']
     ])
-    # os.remove(runsDir + file + "_run")
