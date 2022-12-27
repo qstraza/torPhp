@@ -40,6 +40,9 @@ class StrelivoItem extends OrozjeStrelivoItem
             $tor->setStevilkaListine($this->getStevilkaListine());
             $tor->setDatumIzdajeListine($this->getDatumIzdajeListine());
         }
+        // Če ne izbereš najprej nekaj, kar ni prvi item in potem prvega, tor ne zazna, da imaš prvega izbrano
+        // in vrne napako. Zato najprej kliknemo drugega in na to kar pač moramo.
+        $tor->setStrelivoDelStreliva("2");
         $tor->setStrelivoDelStreliva($this->getStrelivoDelStreliva());
         $tor->setVrstaStreliva($this->getTipVrstaStreliva());
         $tor->setZnamka($this->getZnamka());
@@ -57,7 +60,6 @@ class StrelivoItem extends OrozjeStrelivoItem
         $tor->setDatumPrejemaOrozja($this->getDate());
         $tor->setStevilkaDobavnice($this->getStevilkaPrevzema());
         $tor->setOpomba($this->getOpombaTor());
-
         $error = $tor->confirmPage();
 
         if ($error !== null) {

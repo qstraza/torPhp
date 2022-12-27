@@ -111,15 +111,14 @@ class TorNabavljenoStrelivo extends TorNabava
         $potrdiButtonSelector = "#main_content > div.card.main-frame > div > div:nth-child(5) > div > div > button:nth-child(2)";
         $confirmButtonSelector = "#contentForm\\:confirmDialog button.ui-confirmdialog-yes";
         $error = parent::confirmPage($potrdiButtonSelector, $confirmButtonSelector);
-        if (!$error) {
-            return $error;
-        }
+
         // Če TOR vidi, da si že takšno trelivo prevzel, javi napako in moraš še enkrat potrdit.
         // Napaka: TOR-00460 Zapis s takšnim kalibrom, proizvajalcem in znamko že obstaja!
         // Za potrditev vnosa pritisni Potrdi.
         if (strpos($error, "TOR-00460") !== false) {
             return parent::confirmPage($potrdiButtonSelector, $confirmButtonSelector);
         }
+        return $error;
     }
 
 

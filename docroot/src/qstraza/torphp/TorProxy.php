@@ -45,16 +45,21 @@ class TorProxy
 
     protected function initBrowser()
     {
-        $capabilities = DesiredCapabilities::firefox();
-        $capabilities->setCapability(FirefoxDriver::PROFILE, base64_encode(file_get_contents('/root/.mozilla/firefox/' . $this->clientName . '.zip')));
-        $driver = RemoteWebDriver::create($this->seleniumHost, $capabilities);
-        $driver->manage()->timeouts()->implicitlyWait(10);
-        $driver->manage()->window()->maximize();
-        $this->seleniumDriver = $driver;
-        $this->goHome();
-        if (strpos($this->seleniumDriver->getPageSource(), 'Potekla vam je seja ali ste bili prisiljeno odjavljeni iz aplikacije') !== false) {
-            $this->seleniumDriver->close();
-            $this->initBrowser();
+        try {
+            $capabilities = DesiredCapabilities::firefox();
+            $capabilities->setCapability(FirefoxDriver::PROFILE, base64_encode(file_get_contents('/root/.mozilla/firefox/' . $this->clientName . '.zip')));
+            $driver = RemoteWebDriver::create($this->seleniumHost, $capabilities);
+            $driver->manage()->timeouts()->implicitlyWait(10);
+            $driver->manage()->window()->maximize();
+            $this->seleniumDriver = $driver;
+            $this->goHome();
+            if (strpos($this->seleniumDriver->getPageSource(), 'Potekla vam je seja ali ste bili prisiljeno odjavljeni iz aplikacije') !== false) {
+                $this->seleniumDriver->close();
+                $this->initBrowser();
+            }
+        }
+        catch (\Exception $e) {
+            deleteJob();
         }
     }
 
