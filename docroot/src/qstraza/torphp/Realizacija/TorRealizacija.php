@@ -10,6 +10,7 @@ namespace qstraza\torphp\Realizacija;
 
 
 use Facebook\WebDriver\WebDriverBy;
+use Facebook\WebDriver\WebDriverExpectedCondition;
 use qstraza\torphp\Data\OrozjeItem;
 use qstraza\torphp\Data\User;
 use qstraza\torphp\TorProxy;
@@ -375,6 +376,9 @@ class TorRealizacija extends TorProxy
     public function setVrstaEvidence($vrstaEvidence)
     {
         $vrstaEvidenceCode = substr($vrstaEvidence, 0, 1);
+        $this->getSeleniumDriver()->wait(10, 100)->until(
+            WebDriverExpectedCondition::visibilityOfElementLocated(WebDriverBy::id('contentForm:vno_w62_id_knjige_tor'))
+        );
         $this->clickById("contentForm:vno_w62_id_knjige_tor");
         sleep(0.2);
 
@@ -385,6 +389,7 @@ class TorRealizacija extends TorProxy
                 return $this;
             }
         }
+
         throw new \Exception("Vrednost za vrsto evidence ni prava: {$vrstaEvidence}");
     }
     protected function setRealizacija($nerealizirane)

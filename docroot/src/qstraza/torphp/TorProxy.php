@@ -51,12 +51,17 @@ class TorProxy
             $driver = RemoteWebDriver::create($this->seleniumHost, $capabilities);
             $driver->manage()->timeouts()->implicitlyWait(10);
             $driver->manage()->window()->maximize();
-            $this->seleniumDriver = $driver;
-            $this->goHome();
-            if (strpos($this->seleniumDriver->getPageSource(), 'Potekla vam je seja ali ste bili prisiljeno odjavljeni iz aplikacije') !== false) {
-                $this->seleniumDriver->close();
-                $this->initBrowser();
+            $driver->get($this->url);
+            sleep(8);
+            if ($driver->getTitle() != "TOR - Trgovci z orožjem") {
+                return $this->initBrowser();
             }
+            $this->seleniumDriver = $driver;
+//            $this->goHome();
+//            if (strpos($this->seleniumDriver->getPageSource(), 'Potekla vam je seja ali ste bili prisiljeno odjavljeni iz aplikacije') !== false) {
+//                $this->seleniumDriver->close();
+//                $this->initBrowser();
+//            }
         }
         catch (\Exception $e) {
             deleteJob();
@@ -393,6 +398,7 @@ class TorProxy
      */
     public function clickById($id)
     {
+        $this->waitAjaxLoader();
         return $this->getElementById($id)->click();
     }
 
@@ -744,5 +750,14 @@ class TorProxy
         }
 
         throw new \Exception('Vrsta dovoljenja "' . $vrstaDovoljenja . '", ni pravilna!');
+    }
+
+    public function waitAjaxLoader() {
+        $driver = $this->getSeleniumDriver();
+        $driver->wait(10, 100)->until(
+            function ($driver) {
+                return $driver->executeScript('return jQuery("#j_idt37_modal").length === 0;');
+            }
+        );
     }
 }

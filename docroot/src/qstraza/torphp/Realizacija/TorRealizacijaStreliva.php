@@ -10,6 +10,7 @@ namespace qstraza\torphp\Realizacija;
 
 
 use Facebook\WebDriver\WebDriverBy;
+use Facebook\WebDriver\WebDriverExpectedCondition;
 use Facebook\WebDriver\WebDriverKeys;
 
 class TorRealizacijaStreliva extends TorRealizacija
@@ -89,6 +90,7 @@ class TorRealizacijaStreliva extends TorRealizacija
         if ($vrstaEvidence !== false) {
             $this->setVrstaEvidence($vrstaEvidence);
         }
+
         $this->clickById('contentForm:searchBtn');
         sleep(1);
         $error = $this->getErrorStatus();
@@ -96,7 +98,6 @@ class TorRealizacijaStreliva extends TorRealizacija
             return ["error" => $error];
         }
         return null;
-
     }
 
     private function setStrelivoDelStreliva($strelivoDelStreliva)

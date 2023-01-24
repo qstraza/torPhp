@@ -133,10 +133,16 @@ class TorRealizacijaOrozja extends TorRealizacija
     }
 
 
-    public function openItemBySerial($serijska)
+    public function openItemBySerial($serijska, $realizirano = NULL, $vrstaEvidence = NULL)
     {
         $this->menuClick('iskanje');
         $this->writeById('contentForm:vno_tov_stevilka', $serijska);
+        if ($realizirano !== NULL) {
+            $this->setRealizacija($realizirano, $vrstaEvidence);
+        }
+        if ($vrstaEvidence !== NULL) {
+            $this->setVrstaEvidence($vrstaEvidence);
+        }
         $this->clickById('contentForm:searchBtn');
         sleep(1);
         $error = $this->getErrorStatus();

@@ -37,10 +37,10 @@ class OrozjeItem extends OrozjeStrelivoItem
     {
         $kategorijaCode = explode(" ", $this->getKategorija());
         $kategorijaCode = $kategorijaCode[0];
+        $this->setVrstaEvidence("3 - Nabavljeno in prodano orožje in priglasitveni list");
         switch ($kategorijaCode) {
             case 'D8':
             case 'D9':
-                $this->setVrstaEvidence("3 - Nabavljeno in prodano orožje in priglasitveni list");
                 $return = $tor->openItemByCatBrandModel($this->getKategorija(), $this->getZnamka(), $this->getModel(), 'Ne', $this->getVrstaEvidence());
                 if ($return !== null && array_key_exists("error", $return)) {
                     $this->returnMessage = $return["error"];
